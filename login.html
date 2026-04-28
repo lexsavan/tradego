@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialGuard PRO — Login</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700;800&family=Orbitron:wght@700;900&display=swap');
+:root{
+  --bg:#010d14;--panel:#061520;
+  --border:#0a2d3e;--border2:#155070;
+  --accent:#00ecd0;--accent2:#009e8c;
+  --green:#00ff9d;--red:#ff3355;
+  --yellow:#ffd84d;--purple:#b48bfa;
+  --text:#8ed4eb;--dim:#1e5060;
+  --glow:0 0 30px rgba(0,236,208,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Exo 2',sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
+}
+
+/* Animated background */
+body::before{content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 20%,rgba(0,236,208,.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 80%,rgba(180,139,250,.06) 0%,transparent 50%),
+    linear-gradient(rgba(0,236,208,.014) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,236,208,.014) 1px,transparent 1px);
+  background-size:100%,100%,28px 28px,28px 28px;
+  pointer-events:none;z-index:0;
+}
+
+/* Floating particles */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.particle{
+  position:absolute;width:2px;height:2px;
+  background:var(--accent);border-radius:50%;
+  animation:float linear infinite;opacity:0;
+}
+@keyframes float{
+  0%{transform:translateY(100vh) translateX(0);opacity:0;}
+  10%{opacity:.6;}
+  90%{opacity:.3;}
+  100%{transform:translateY(-100px) translateX(100px);opacity:0;}
+}
+
+.wrap{
+  position:relative;z-index:1;
+  width:100%;max-width:440px;
+  padding:16px;
+}
+
+/* Logo area */
+.logo-area{text-align:center;margin-bottom:32px;}
+.logo-icon{
+  width:70px;height:70px;margin:0 auto 16px;
+  background:rgba(0,236,208,.08);
+  border:2px solid rgba(0,236,208,.3);
+  border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;
+  box-shadow:0 0 30px rgba(0,236,208,.15);
+  animation:iconpulse 3s infinite;
+}
+@keyframes iconpulse{
+  0%,100%{box-shadow:0 0 30px rgba(0,236,208,.15);}
+  50%{box-shadow:0 0 50px rgba(0,236,208,.3);}
+}
+.logo-text{
+  font-family:'Orbitron',monospace;
+  font-size:22px;letter-spacing:4px;
+  color:var(--accent);text-shadow:var(--glow);
+}
+.logo-text em{color:var(--green);font-style:normal;}
+.logo-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:var(--dim);
+  letter-spacing:2px;margin-top:6px;
+}
+
+/* Card */
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:6px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+.card-header{
+  background:rgba(0,236,208,.04);
+  border-bottom:1px solid var(--border);
+  padding:14px 24px;
+  font-family:'Orbitron',monospace;
+  font-size:10px;letter-spacing:2px;
+  color:var(--accent);
+  display:flex;align-items:center;gap:8px;
+}
+.hd{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:bl 2s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+.card-body{padding:28px 24px;}
+
+/* Form */
+.form-group{margin-bottom:18px;}
+label{
+  display:block;font-size:9px;
+  color:var(--dim);letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:6px;
+  font-family:'Share Tech Mono',monospace;
+}
+.input-wrap{position:relative;}
+.input-wrap .icon{
+  position:absolute;left:12px;top:50%;
+  transform:translateY(-50%);
+  font-size:15px;opacity:.5;
+}
+input{
+  width:100%;
+  background:rgba(0,0,0,.4);
+  border:1px solid var(--border);
+  color:var(--text);
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;
+  padding:12px 12px 12px 38px;
+  border-radius:3px;
+  outline:none;
+  transition:all .25s;
+}
+input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,236,208,.08);
+  background:rgba(0,236,208,.03);
+}
+input::placeholder{color:var(--dim);}
+
+/* Show password toggle */
+.toggle-pw{
+  position:absolute;right:12px;top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;font-size:14px;opacity:.4;
+  transition:opacity .2s;
+  background:none;border:none;color:var(--text);
+}
+.toggle-pw:hover{opacity:.8;}
+
+/* Error message */
+.error-msg{
+  background:rgba(255,51,85,.08);
+  border:1px solid rgba(255,51,85,.3);
+  border-radius:3px;
+  padding:10px 14px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--red);
+  margin-bottom:16px;
+  display:none;
+  animation:shake .4s ease;
+}
+.error-msg.show{display:flex;align-items:center;gap:8px;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-6px);}
+  75%{transform:translateX(6px);}
+}
+
+/* Login button */
+.login-btn{
+  width:100%;padding:14px;
+  border:none;border-radius:3px;
+  font-family:'Orbitron',monospace;
+  font-size:12px;font-weight:700;
+  letter-spacing:3px;cursor:pointer;
+  transition:all .25s;
+  position:relative;overflow:hidden;
+  margin-top:4px;
+}
+.login-btn.ready{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#000;
+  box-shadow:0 0 30px rgba(0,236,208,.25);
+}
+.login-btn.ready:hover{
+  box-shadow:0 0 50px rgba(0,236,208,.5);
+  transform:translateY(-2px);
+}
+.login-btn.loading{
+  background:rgba(0,236,208,.15);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  cursor:not-allowed;
+}
+.login-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+  transform:translateX(-100%);
+  animation:shimmer 2s infinite;
+}
+@keyframes shimmer{to{transform:translateX(100%)}}
+
+/* Remember me */
+.remember{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:18px;cursor:pointer;
+  font-size:11px;color:var(--dim);
+  font-family:'Share Tech Mono',monospace;
+}
+.remember input[type=checkbox]{
+  width:14px;height:14px;padding:0;
+  accent-color:var(--accent);cursor:pointer;
+}
+
+/* Security badge */
+.security{
+  display:flex;align-items:center;justify-content:center;
+  gap:6px;margin-top:20px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--dim);letter-spacing:1px;
+}
+.security span{color:var(--green);}
+
+/* Version */
+.version{
+  text-align:center;margin-top:20px;
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;color:var(--dim);letter-spacing:1px;
+}
+
+/* Success overlay */
+.success-overlay{
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:1000;
+  display:none;
+  flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:16px;
+}
+.success-overlay.show{display:flex;}
+.success-icon{font-size:60px;animation:scaleIn .5s ease;}
+@keyframes scaleIn{from{transform:scale(0)}to{transform:scale(1)}}
+.success-title{
+  font-family:'Orbitron',monospace;
+  font-size:18px;color:var(--green);
+  letter-spacing:3px;
+  text-shadow:0 0 20px rgba(0,255,157,.4);
+}
+.success-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;color:var(--dim);
+}
+.progress-bar{
+  width:240px;height:3px;
+  background:var(--border);border-radius:2px;
+  overflow:hidden;margin-top:8px;
+}
+.progress-fill{
+  height:100%;border-radius:2px;
+  background:linear-gradient(90deg,var(--accent),var(--green));
+  animation:fillBar 2s ease forwards;
+}
+@keyframes fillBar{from{width:0%}to{width:100%}}
+</style>
+</head>
+<body>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Login -->
+<div class="wrap">
+  <div class="logo-area">
+    <div class="logo-icon">🛡</div>
+    <div class="logo-text">SOCIAL<em>GUARD</em> <em>PRO</em></div>
+    <div class="logo-sub">AI TRADING SYSTEM — SECURE ACCESS</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="hd"></div>
+      AUTHENTICATION REQUIRED
+    </div>
+    <div class="card-body">
+
+      <div class="error-msg" id="errorMsg">
+        <span>⚠</span>
+        <span id="errorText">Username ຫຼື Password ຜິດ</span>
+      </div>
+
+      <div class="form-group">
+        <label>Username</label>
+        <div class="input-wrap">
+          <span class="icon">👤</span>
+          <input type="text" id="username" placeholder="ໃສ່ username..."
+            autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <span class="icon">🔑</span>
+          <input type="password" id="password" placeholder="ໃສ່ password..."
+            autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="toggle-pw" onclick="togglePw()" type="button" id="toggleBtn">👁</button>
+        </div>
+      </div>
+
+      <label class="remember">
+        <input type="checkbox" id="rememberMe">
+        ຈຳ login ໄວ້ (7 ມື້)
+      </label>
+
+      <button class="login-btn ready" id="loginBtn" onclick="doLogin()">
+        🔐 ENTER DASHBOARD
+      </button>
+
+      <div class="security">
+        <span>🔒</span>
+        <span>ENCRYPTED</span>
+        <span>·</span>
+        <span>SECURE</span>
+        <span>·</span>
+        <span style="color:var(--green)">SocialGuard PRO</span>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="version">v3.0 — Better than 3Commas + Pionex</div>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-icon">✅</div>
+  <div class="success-title">ACCESS GRANTED</div>
+  <div class="success-sub">ກຳລັງໂຫຼດ Dashboard...</div>
+  <div class="progress-bar">
+    <div class="progress-fill"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+//  CONFIG
+// ══════════════════════════════
+const DASHBOARD_URL = "/dashboard";
+
+// ══════════════════════════════
+//  PARTICLES
+// ══════════════════════════════
+function createParticles(){
+  const container = document.getElementById('particles');
+  for(let i=0;i<25;i++){
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random()*100+'%';
+    p.style.animationDuration = (8+Math.random()*12)+'s';
+    p.style.animationDelay = (Math.random()*10)+'s';
+    p.style.width = p.style.height = (1+Math.random()*2)+'px';
+    p.style.opacity = Math.random()*.6;
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+// ══════════════════════════════
+//  CHECK SAVED SESSION
+// ══════════════════════════════
+window.onload = function(){
+  const saved = localStorage.getItem('sg_session');
+  if(saved){
+    try{
+      const s = JSON.parse(saved);
+      if(s.expires > Date.now()){
+        showSuccess();
+        return;
+      }
+    }catch{}
+    localStorage.removeItem('sg_session');
+  }
+  // Focus username
+  document.getElementById('username').focus();
+};
+
+// ══════════════════════════════
+//  LOGIN
+// ══════════════════════════════
+async function doLogin(){
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn      = document.getElementById('loginBtn');
+  const errMsg   = document.getElementById('errorMsg');
+
+  errMsg.classList.remove('show');
+
+  if(!username || !password){
+    showError('ກະລຸນາໃສ່ Username ແລະ Password');
+    return;
+  }
+
+  btn.className   = 'login-btn loading';
+  btn.textContent = '⏳ AUTHENTICATING...';
+
+  try{
+    const res = await fetch('/api/login', {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({username, password}),
+      credentials: 'include',
+    });
+
+    if(res.ok){
+      showSuccess();
+    } else {
+      const err = await res.json().catch(()=>({}));
+      btn.className   = 'login-btn ready';
+      btn.textContent = '🔐 ENTER DASHBOARD';
+      showError(err.detail || 'Username ຫຼື Password ຜິດ');
+      document.getElementById('password').value = '';
+      document.getElementById('password').focus();
+    }
+  } catch(e){
+    btn.className   = 'login-btn ready';
+    btn.textContent = '🔐 ENTER DASHBOARD';
+    showError('ບໍ່ສາມາດເຊື່ອມຕໍ່ server — ລອງໃໝ່');
+  }
+}
+
+function showError(msg){
+  const el = document.getElementById('errorMsg');
+  document.getElementById('errorText').textContent = msg;
+  el.classList.add('show');
+}
+
+function showSuccess(){
+  document.getElementById('successOverlay').classList.add('show');
+  setTimeout(()=>{
+    // Redirect to dashboard
+    window.location.href = DASHBOARD_URL;
+  }, 2200);
+}
+
+function togglePw(){
+  const inp = document.getElementById('password');
+  const btn = document.getElementById('toggleBtn');
+  if(inp.type === 'password'){
+    inp.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+// Logout function (call from dashboard)
+function logout(){
+  localStorage.removeItem('sg_session');
+  sessionStorage.removeItem('sg_auth');
+  window.location.href = '/login';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialGuard DERIV</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Exo+2:wght@300;400;600;800&family=Orbitron:wght@600;900&display=swap');
+:root{
+  --bg:#030810;--p1:#060f1e;--p2:#0a1628;
+  --b1:#0f2040;--b2:#1a3560;
+  --a:#ff6b35;--a2:#cc4a1a;
+  --g:#00ff88;--r:#ff3355;
+  --y:#ffdd00;--bl:#33aaff;--pu:#cc88ff;
+  --tx:#9bb8d4;--dim:#1e3550;
+  --glow:0 0 30px rgba(255,107,53,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'Exo 2',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 15% 0%,rgba(255,107,53,.06) 0%,transparent 45%),
+             radial-gradient(ellipse at 85% 100%,rgba(51,170,255,.04) 0%,transparent 45%),
+             linear-gradient(rgba(255,107,53,.008) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(255,107,53,.008) 1px,transparent 1px);
+  background-size:100%,100%,30px 30px,30px 30px;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;
+  border-bottom:1px solid var(--b1);background:rgba(3,8,16,.96);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;}
+.logo{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:3px;color:var(--a);text-shadow:var(--glow);}
+.logo em{color:var(--g);font-style:normal;}
+.hdr-r{display:flex;gap:8px;align-items:center;}
+.chip{padding:3px 10px;border-radius:2px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;display:flex;align-items:center;gap:4px;}
+.chip.live{background:rgba(0,255,136,.07);border:1px solid rgba(0,255,136,.3);color:var(--g);}
+.chip.ai{background:rgba(204,136,255,.1);border:1px solid rgba(204,136,255,.3);color:var(--pu);}
+.chip.off{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:var(--r);}
+.dot{width:5px;height:5px;border-radius:50%;animation:bl 1.5s infinite;}
+.dot.g{background:var(--g);} .dot.o{background:var(--a);}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.15}}
+
+.tabs{display:flex;padding:0 20px;background:rgba(3,8,16,.85);border-bottom:1px solid var(--b1);}
+.tab{padding:10px 16px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;
+  color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;}
+.tab:hover{color:var(--tx);} .tab.on{color:var(--a);border-bottom-color:var(--a);}
+
+.page{display:none;padding:16px 20px;} .page.on{display:block;}
+
+.sbar{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px;}
+.sc{background:var(--p1);border:1px solid var(--b1);border-radius:3px;padding:9px 12px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--a),transparent);opacity:.2;}
+.sc-l{font-size:8px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.sc-v{font-family:'Space Mono',monospace;font-size:16px;color:var(--a);}
+.sc-v.g{color:var(--g);} .sc-v.r{color:var(--r);} .sc-v.y{color:var(--y);}
+.sc-s{font-size:9px;color:var(--dim);margin-top:1px;}
+
+.g2{display:grid;grid-template-columns:300px 1fr;gap:12px;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.pnl{background:var(--p1);border:1px solid var(--b1);border-radius:3px;overflow:hidden;margin-bottom:10px;}
+.ph{background:rgba(255,107,53,.04);border-bottom:1px solid var(--b1);padding:8px 14px;
+  font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--a);display:flex;align-items:center;gap:6px;}
+.pd{width:6px;height:6px;border-radius:50%;background:var(--dim);}
+.pd.g{background:var(--g);box-shadow:0 0 4px var(--g);animation:bl 2s infinite;}
+.pd.o{background:var(--a);box-shadow:0 0 4px var(--a);animation:bl 1.5s infinite;}
+.pb{padding:13px;}
+.fl{display:block;font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;margin-top:8px;}
+.fi{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--b1);color:var(--tx);
+  font-family:'Space Mono',monospace;font-size:11px;padding:7px 10px;border-radius:2px;outline:none;transition:border-color .2s;}
+.fi:focus{border-color:var(--a);} .fi option{background:#060f1e;}
+
+.btn{padding:10px 18px;border:none;border-radius:2px;font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.btn.pri{background:linear-gradient(135deg,var(--a),var(--a2));color:#fff;box-shadow:0 0 20px rgba(255,107,53,.25);}
+.btn.pri:hover{box-shadow:0 0 35px rgba(255,107,53,.5);transform:translateY(-1px);}
+.btn.full{width:100%;padding:12px;font-size:11px;letter-spacing:2px;font-family:'Orbitron',monospace;}
+
+/* Type badges */
+.type-syn{background:rgba(255,107,53,.12);border:1px solid rgba(255,107,53,.35);color:var(--a);
+  padding:2px 8px;border-radius:1px;font-size:8px;font-weight:700;letter-spacing:.5px;}
+.type-fx{background:rgba(51,170,255,.1);border:1px solid rgba(51,170,255,.3);color:var(--bl);
+  padding:2px 8px;border-radius:1px;font-size:8px;font-weight:700;letter-spacing:.5px;}
+.sig-call{background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.35);color:var(--g);
+  padding:2px 8px;border-radius:1px;font-size:9px;font-weight:700;}
+.sig-put{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.35);color:var(--r);
+  padding:2px 8px;border-radius:1px;font-size:9px;font-weight:700;}
+
+/* Pick cards */
+.pick-card{background:rgba(0,0,0,.35);border:1px solid var(--b1);border-radius:3px;padding:12px;
+  margin-bottom:8px;transition:border-color .2s;}
+.pick-card:hover{border-color:rgba(255,107,53,.3);}
+.pick-card.A{border-color:rgba(255,221,0,.4);}
+.pick-card.B{border-color:rgba(204,136,255,.3);}
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.pc-name{font-family:'Orbitron',monospace;font-size:12px;color:var(--a);}
+.pc-price{font-family:'Space Mono',monospace;font-size:13px;color:var(--y);}
+
+/* Config box */
+.cfg{background:rgba(255,107,53,.05);border:1px solid rgba(255,107,53,.15);border-radius:2px;
+  padding:8px;font-family:'Space Mono',monospace;font-size:9px;line-height:2;}
+.cfg-r{display:flex;justify-content:space-between;}
+.cfg-k{color:var(--dim);} .cfg-v{color:var(--a);}
+.cfg-v.g{color:var(--g);} .cfg-v.r{color:var(--r);}
+
+/* Bot cards */
+.bot-card{background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:3px;padding:10px 12px;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+
+/* Table */
+.mkt-table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:10px;}
+.mkt-table th{padding:6px 8px;color:var(--dim);font-size:8px;letter-spacing:1px;
+  border-bottom:1px solid var(--b1);text-align:left;font-weight:400;}
+.mkt-table td{padding:5px 8px;border-bottom:1px solid rgba(15,32,64,.5);}
+.mkt-table tr:hover td{background:rgba(255,107,53,.03);}
+
+/* Log */
+.ai-log{max-height:180px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:3px;}
+.ll{padding:2px 7px;border-left:2px solid var(--b1);font-family:'Space Mono',monospace;
+  font-size:10px;color:var(--dim);}
+.ll.ai{border-left-color:var(--pu);color:var(--tx);}
+.ll.ok{border-left-color:var(--g);color:var(--g);}
+.ll.err{border-left-color:var(--r);color:var(--r);}
+.ll.warn{border-left-color:var(--y);color:var(--y);}
+.ll-t{color:var(--dim);margin-right:5px;font-size:9px;}
+
+/* Think */
+.think{padding:40px;text-align:center;display:none;}
+.think.show{display:block;}
+.think-icon{font-size:44px;animation:bounce .7s infinite alternate;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.think-title{font-family:'Orbitron',monospace;font-size:12px;color:var(--a);letter-spacing:2px;margin:10px 0 5px;}
+.prog{width:220px;height:2px;background:var(--b1);border-radius:1px;margin:8px auto;overflow:hidden;}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--a),var(--g));transition:width .4s;}
+
+.note{background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);border-radius:2px;
+  padding:8px 11px;font-size:10px;color:var(--a);line-height:1.7;margin-top:8px;}
+
+@media(max-width:900px){.g2,.r2{grid-template-columns:1fr;}.sbar{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo">SOCIAL<em>GUARD</em> <em>DERIV</em></div>
+  <div class="hdr-r">
+    <div class="chip ai"><div class="dot o"></div><span id="aiBadge">3 AI Consensus</span></div>
+    <div class="chip live"><div class="dot g"></div><span id="hdrStatus">CONNECTING...</span></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab on" onclick="showTab('analyze')">🤖 AI Analyze</div>
+  <div class="tab" onclick="showTab('market')">📊 Market</div>
+  <div class="tab" onclick="showTab('bots')">⚡ Bots</div>
+  <div class="tab" onclick="showTab('account')">💰 Account</div>
+</nav>
+
+<!-- ═══ ANALYZE ═══ -->
+<div class="page on" id="page-analyze">
+  <div class="sbar">
+    <div class="sc"><div class="sc-l">Balance</div><div class="sc-v y" id="sBalance">—</div><div class="sc-s" id="sCurrency">USD</div></div>
+    <div class="sc"><div class="sc-l">Total P/L</div><div class="sc-v g" id="sPnl">+0.00</div><div class="sc-s">USD</div></div>
+    <div class="sc"><div class="sc-l">Open Bots</div><div class="sc-v" id="sOpen">0</div><div class="sc-s">running</div></div>
+    <div class="sc"><div class="sc-l">Mode</div><div class="sc-v y" id="sMode">DEMO</div><div class="sc-s">Deriv</div></div>
+    <div class="sc"><div class="sc-l">Last Scan</div><div class="sc-v" id="sScan" style="font-size:11px;">—</div><div class="sc-s">auto</div></div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd o"></div>AI SETTINGS</div>
+        <div class="pb">
+          <span class="fl">Symbol Type</span>
+          <select class="fi" id="symType">
+            <option value="synthetic">🎲 Synthetic Indices (V10, V25, V50...)</option>
+            <option value="forex">💱 Forex (EUR/USD, GBP/USD...)</option>
+            <option value="both">🌐 ທັງໝົດ (Synthetic + Forex)</option>
+          </select>
+          <span class="fl">ຈຳນວນ Picks</span>
+          <select class="fi" id="count">
+            <option value="2">2 symbols</option>
+            <option value="3" selected>3 symbols</option>
+            <option value="4">4 symbols</option>
+          </select>
+          <span class="fl">Risk Level</span>
+          <select class="fi" id="risk">
+            <option value="low">🛡 Low — $1 per trade</option>
+            <option value="med">⚖ Medium — $2 per trade</option>
+            <option value="high">🔥 High — $5 per trade</option>
+          </select>
+          <span class="fl">Mode</span>
+          <select class="fi" id="tradeMode">
+            <option value="sim">🧪 Simulation</option>
+            <option value="live">⚡ Live (Deriv)</option>
+          </select>
+          <button class="btn pri full" id="analyzeBtn" onclick="runAnalyze()" style="margin-top:10px;">
+            🤖 AI ANALYZE DERIV
+          </button>
+          <div class="note">💡 AI ວິເຄາະ Synthetic Indices + Forex ດ້ວຍ RSI MACD BB + 3 AI Consensus. Synthetic 24/7 ບໍ່ປິດ!</div>
+        </div>
+      </div>
+      <div class="pnl">
+        <div class="ph"><div class="pd o"></div>AI LOG</div>
+        <div class="ai-log" id="aiLog"><div class="ll">ລໍຖ້າ...</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="pnl" id="thinkPanel" style="display:none;">
+        <div class="think show">
+          <div class="think-icon">📊</div>
+          <div class="think-title">AI ANALYZING DERIV</div>
+          <div id="thinkMsg" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:8px;">ກຳລັງດຶງ data...</div>
+          <div class="prog"><div class="prog-f" id="progF" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div id="resultsWrap" style="display:none;">
+        <div class="pnl">
+          <div class="ph"><div class="pd o"></div>AI RECOMMENDATIONS</div>
+          <div style="background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.18);
+            border-radius:2px;padding:10px 14px;margin:10px;font-size:11px;line-height:1.8;" id="aiSum">—</div>
+          <div style="padding:10px 12px;" id="picksGrid"></div>
+        </div>
+      </div>
+
+      <div class="pnl" id="emptyState">
+        <div style="padding:50px;text-align:center;color:var(--dim);">
+          <div style="font-size:48px;margin-bottom:12px;">📊</div>
+          <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--a);letter-spacing:2px;margin-bottom:8px;">DERIV READY</div>
+          <div style="font-size:11px;line-height:1.9;">ກົດ <strong style="color:var(--a)">AI ANALYZE DERIV</strong><br>
+          ວິເຄາະ Synthetic Indices + Forex 24/7</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MARKET ═══ -->
+<div class="page" id="page-market">
+  <div class="pnl">
+    <div class="ph"><div class="pd g"></div>LIVE — DERIV SYMBOLS
+      <button onclick="loadMarket()" style="margin-left:auto;padding:3px 10px;
+        background:rgba(255,107,53,.1);border:1px solid var(--a2);border-radius:2px;
+        color:var(--a);cursor:pointer;font-family:'Space Mono',monospace;font-size:9px;">↺ REFRESH</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="mkt-table">
+        <thead><tr>
+          <th>Symbol</th><th>Type</th><th>Price</th><th>24h %</th>
+          <th>RSI</th><th>MACD</th><th>BB</th><th>Score</th><th>Grade</th>
+        </tr></thead>
+        <tbody id="mktBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BOTS ═══ -->
+<div class="page" id="page-bots">
+  <div class="r2">
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd g"></div>OPEN BOTS / CONTRACTS</div>
+        <div style="padding:10px;" id="openBotsList">
+          <div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ open bots</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd"></div>CLOSED (Last 20)</div>
+        <div style="padding:10px;" id="closedBotsList">
+          <div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ history</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ACCOUNT ═══ -->
+<div class="page" id="page-account">
+  <div class="pnl">
+    <div class="ph"><div class="pd g"></div>DERIV ACCOUNT</div>
+    <div style="padding:20px;" id="accountInfo">
+      <div style="color:var(--dim);text-align:center;padding:20px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = '';
+let lastPicks = [];
+
+function showTab(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('on',['analyze','market','bots','account'][i]===n);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('page-'+n).classList.add('on');
+  if(n==='market')  loadMarket();
+  if(n==='bots')    loadBots();
+  if(n==='account') loadAccount();
+}
+
+async function checkHealth(){
+  try{
+    const r=await fetch(API+'/api/health',{credentials:'include'});
+    if(r.status===401){window.location.href='/login';return;}
+    const d=await r.json();
+    document.getElementById('hdrStatus').textContent='CONNECTED ✅';
+    document.getElementById('sMode').textContent=d.deriv_ok?'DEMO':'NO KEY';
+    loadStats();
+  }catch(e){
+    document.getElementById('hdrStatus').textContent='OFFLINE';
+    document.querySelector('.chip.live').className='chip off';
+  }
+}
+
+async function loadStats(){
+  try{
+    const [acc,bots]=await Promise.all([
+      fetch(API+'/api/account',{credentials:'include'}),
+      fetch(API+'/api/bots',{credentials:'include'})
+    ]);
+    const da=await acc.json(); const db=await bots.json();
+    if(da.ok){
+      document.getElementById('sBalance').textContent=da.balance?.toFixed(2)||'—';
+      document.getElementById('sCurrency').textContent=da.currency||'USD';
+    }
+    if(db.ok){
+      document.getElementById('sOpen').textContent=db.count||0;
+      const pnl=db.totalPnl||0;
+      document.getElementById('sPnl').textContent=(pnl>=0?'+':'')+pnl.toFixed(4);
+      document.getElementById('sPnl').className='sc-v '+(pnl>=0?'g':'r');
+    }
+    document.getElementById('sScan').textContent=new Date().toTimeString().split(' ')[0];
+  }catch{}
+}
+
+async function runAnalyze(){
+  const btn=document.getElementById('analyzeBtn');
+  btn.textContent='⏳ Analyzing...'; btn.disabled=true;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('resultsWrap').style.display='none';
+  document.getElementById('thinkPanel').style.display='block';
+  const steps=['ດຶງ Deriv prices...','ຄຳນວນ RSI...','ຄຳນວນ MACD+BB...','Claude AI...','ChatGPT...','Gemini...','Consensus...'];
+  let prog=0;
+  const pi=setInterval(()=>{
+    prog=Math.min(prog+10,88);
+    document.getElementById('progF').style.width=prog+'%';
+    document.getElementById('thinkMsg').textContent=steps[Math.floor(prog/14)]||steps[6];
+  },500);
+  addLog('ai','🤖 3 AI ກຳລັງວິເຄາະ Deriv...');
+  try{
+    const r=await fetch(API+'/api/analyze',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        count:+document.getElementById('count').value||3,
+        risk:document.getElementById('risk').value,
+        mode:document.getElementById('tradeMode').value,
+        symbol_type:document.getElementById('symType').value,
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const data=await r.json();
+    clearInterval(pi);
+    document.getElementById('progF').style.width='100%';
+    await sleep(300);
+    document.getElementById('thinkPanel').style.display='none';
+    renderResults(data);
+    addLog('ok',`✅ AI ເລືອກ ${data.picks?.length||0}: ${data.picks?.map(p=>p.name).join(', ')}`);
+  }catch(e){
+    clearInterval(pi);
+    document.getElementById('thinkPanel').style.display='none';
+    document.getElementById('emptyState').style.display='block';
+    addLog('err','❌ '+e.message);
+  }
+  btn.textContent='🔄 RE-ANALYZE'; btn.disabled=false;
+}
+
+function renderResults(r){
+  document.getElementById('aiSum').textContent=r.summary||'—';
+  const grid=document.getElementById('picksGrid'); grid.innerHTML='';
+  lastPicks=r.picks||[];
+  lastPicks.forEach((p,i)=>{
+    const sig=p.signal||'CALL'; const isSyn=p.type==='synthetic';
+    const card=document.createElement('div');
+    card.className=`pick-card ${p.grade||''}`;
+    card.innerHTML=`
+      <div class="pc-top">
+        <div>
+          <div class="pc-name">${p.name}</div>
+          <div style="font-size:9px;color:var(--dim);margin-top:2px;">${p.votes||'AI Pick'} | ${r.source||'local'}</div>
+        </div>
+        <div style="text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end;">
+          <div class="pc-price">${p.currentPrice||'—'}</div>
+          <span class="${isSyn?'type-syn':'type-fx'}">${isSyn?'SYNTHETIC':'FOREX'}</span>
+          <span class="sig-${sig.toLowerCase()}">${sig}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+        ${(p.aiOpinions||[]).map(o=>`<span style="font-size:8px;padding:1px 6px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.2);border-radius:1px;color:var(--a);">${o}</span>`).join('')}
+      </div>
+      <div class="cfg">
+        <div style="font-size:8px;color:var(--a);font-family:'Orbitron',monospace;letter-spacing:1px;margin-bottom:4px;">⚙ CONTRACT SETTINGS</div>
+        <div class="cfg-r"><span class="cfg-k">Amount:</span><span class="cfg-v g">$${p.amount||1}</span></div>
+        <div class="cfg-r"><span class="cfg-k">Duration:</span><span class="cfg-v">${p.duration||5} ${p.duration_unit||'m'}</span></div>
+        <div class="cfg-r"><span class="cfg-k">Signal:</span><span class="cfg-v ${sig==='CALL'?'g':'r'}">${sig}</span></div>
+        <div class="cfg-r"><span class="cfg-k">RSI:</span><span class="cfg-v">${p.rsi?.toFixed?.(1)||'—'}</span></div>
+        <div class="cfg-r"><span class="cfg-k">MACD:</span><span class="cfg-v ${p.macd?.cross==='bullish'?'g':'r'}">${p.macd?.cross||'—'}</span></div>
+        <div class="cfg-r"><span class="cfg-k">Score:</span><span class="cfg-v y">${p.aiScore||'—'}/100 [${p.grade||'?'}]</span></div>
+        <div class="cfg-r"><span class="cfg-k">Confidence:</span><span class="cfg-v">${p.confidence||'—'}%</span></div>
+      </div>
+      <div style="font-size:10px;color:var(--tx);line-height:1.6;margin:6px 0;">${p.whyPick||'—'}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+        ${(p.tags||[]).map(t=>`<span style="padding:2px 7px;border-radius:1px;font-size:8px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.2);color:var(--a);">${t}</span>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;">
+        <button onclick="applyTrade(${i},'${sig}')" style="padding:9px;border:none;border-radius:2px;
+          font-family:'Space Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;
+          background:${sig==='CALL'?'rgba(0,255,136,.15)':'rgba(255,51,85,.15)'};
+          border:1px solid ${sig==='CALL'?'var(--g)':'var(--r)'};
+          color:${sig==='CALL'?'var(--g)':'var(--r)'};">
+          ▶ ${sig} NOW
+        </button>
+        <button onclick="applyTrade(${i},'${sig==='CALL'?'PUT':'CALL'}')" style="padding:9px;border:none;border-radius:2px;
+          font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;
+          background:rgba(255,107,53,.08);border:1px solid var(--b2);color:var(--a);">
+          ${sig==='CALL'?'▼ PUT':'▲ CALL'} Instead
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  document.getElementById('resultsWrap').style.display='block';
+}
+
+async function applyTrade(i, signal){
+  const p=lastPicks[i]; if(!p) return;
+  const mode=document.getElementById('tradeMode').value;
+  try{
+    const r=await fetch(API+'/api/bot/start',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        symbol:p.symbol,name:p.name,signal,
+        amount:p.amount||1.0,
+        duration:p.duration||5,
+        duration_unit:p.duration_unit||'m',
+        mode,
+      })
+    });
+    const d=await r.json();
+    if(d.ok) addLog('ok',`✅ ${signal} ${p.name} $${p.amount} [${mode.toUpperCase()}]`);
+    else addLog('err','❌ '+(d.error||'Error'));
+    loadStats();
+  }catch(e){addLog('err','❌ '+e.message);}
+}
+
+async function loadMarket(){
+  const tbody=document.getElementById('mktBody');
+  tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--dim);">Loading...</td></tr>';
+  try{
+    const r=await fetch(API+'/api/market',{credentials:'include'});
+    const d=await r.json(); tbody.innerHTML='';
+    (d.symbols||[]).forEach(s=>{
+      const isSyn=s.type==='synthetic'; const chg=s.change24h||0;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td style="color:var(--a);font-weight:700;">${s.name}</td>
+        <td><span class="${isSyn?'type-syn':'type-fx'}">${isSyn?'SYN':'FX'}</span></td>
+        <td style="font-family:'Space Mono',monospace;color:var(--y);">${s.price}</td>
+        <td style="color:${chg>=0?'var(--g)':'var(--r)'};">${chg>=0?'+':''}${chg}%</td>
+        <td style="color:${s.rsi<35?'var(--g)':s.rsi>65?'var(--r)':'var(--tx)'};">${s.rsi?.toFixed?.(1)||'—'}</td>
+        <td style="color:${s.macd?.cross==='bullish'?'var(--g)':'var(--r)'};">${s.macd?.cross||'—'}</td>
+        <td>${s.bb?.pct?.toFixed?.(2)||'—'}</td>
+        <td style="color:${s.aiScore>=80?'var(--y)':'var(--tx)'};">${s.aiScore||'—'}</td>
+        <td style="color:${s.grade==='A'?'var(--y)':s.grade==='B'?'var(--pu)':'var(--a)'};">${s.grade||'—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }catch(e){document.getElementById('mktBody').innerHTML=
+    `<tr><td colspan="9" style="text-align:center;color:var(--r);padding:20px;">❌ ${e.message}</td></tr>`;}
+}
+
+async function loadBots(){
+  try{
+    const r=await fetch(API+'/api/bots',{credentials:'include'});
+    const d=await r.json();
+    const op=document.getElementById('openBotsList');
+    const cl=document.getElementById('closedBotsList');
+    if(!d.open?.length) op.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ open bots</div>';
+    else op.innerHTML=d.open.map(b=>`
+      <div class="bot-card" style="border-color:rgba(0,255,136,.3);">
+        <div style="min-width:100px;">
+          <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--a);">${b.name||b.symbol}</div>
+          <div style="font-size:8px;color:var(--dim);">${b.opened?.split('T')[1]?.split('.')[0]||'—'}</div>
+        </div>
+        <span class="sig-${(b.signal||'call').toLowerCase()}">${b.signal||'CALL'}</span>
+        <span style="font-size:9px;padding:2px 6px;background:${b.mode==='live'?'rgba(255,221,0,.1)':'rgba(0,255,136,.08)'};
+          border:1px solid ${b.mode==='live'?'var(--y)':'var(--g)'};border-radius:1px;
+          color:${b.mode==='live'?'var(--y)':'var(--g)'};">${b.mode==='live'?'⚡ LIVE':'🧪 SIM'}</span>
+        <span style="font-size:9px;color:var(--dim);">$${b.amount}</span>
+        <div style="font-family:'Space Mono',monospace;font-size:12px;margin-left:auto;
+          color:${b.pnl>=0?'var(--g)':'var(--r)'};">${b.pnl>=0?'+':''}${b.pnl?.toFixed?.(4)||'0.0000'}</div>
+        <button onclick="closeBot('${b.id}','${b.mode}')" style="padding:4px 10px;border:1px solid var(--r);
+          border-radius:2px;background:rgba(255,51,85,.1);color:var(--r);cursor:pointer;font-size:9px;">CLOSE</button>
+      </div>`).join('');
+
+    if(!d.closed?.length) cl.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ history</div>';
+    else cl.innerHTML=d.closed.map(b=>`
+      <div class="bot-card" style="opacity:0.65;">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:var(--dim);min-width:80px;">${b.name||b.symbol}</div>
+        <span class="sig-${(b.signal||'call').toLowerCase()}">${b.signal}</span>
+        <div style="font-family:'Space Mono',monospace;font-size:12px;margin-left:auto;
+          color:${b.pnl>=0?'var(--g)':'var(--r)'};">${b.pnl>=0?'+':''}${b.pnl?.toFixed?.(4)||'0.0000'}</div>
+        <span style="font-size:8px;color:var(--dim);">${b.closed?.split('T')[1]?.split('.')[0]||'—'}</span>
+      </div>`).join('');
+  }catch{}
+}
+
+async function closeBot(id, mode){
+  try{
+    const r=await fetch(API+`/api/bot/stop/${id}`,{method:'POST',credentials:'include'});
+    const d=await r.json();
+    addLog('ok',`⏹ Closed — P/L: ${d.pnl>=0?'+':''}${d.pnl?.toFixed?.(4)||0}`);
+    loadBots(); loadStats();
+  }catch(e){addLog('err','❌ '+e.message);}
+}
+
+async function loadAccount(){
+  try{
+    const r=await fetch(API+'/api/account',{credentials:'include'});
+    const d=await r.json();
+    const el=document.getElementById('accountInfo');
+    if(d.ok){
+      el.innerHTML=`
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:14px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;">BALANCE</div>
+            <div style="font-family:'Space Mono',monospace;font-size:22px;color:var(--y);">${d.balance?.toFixed?.(2)||'—'}</div>
+            <div style="font-size:9px;color:var(--dim);">${d.currency||'USD'}</div>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:14px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;">ACCOUNT</div>
+            <div style="font-family:'Space Mono',monospace;font-size:14px;color:var(--a);">${d.loginid||'Demo'}</div>
+            <div style="font-size:9px;color:var(--g);">DEMO ✅</div>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:14px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:6px;">API STATUS</div>
+            <div style="font-family:'Space Mono',monospace;font-size:14px;color:var(--g);">CONNECTED</div>
+            <div style="font-size:9px;color:var(--g);">Deriv WS ✅</div>
+          </div>
+        </div>
+        <div style="padding:10px;background:rgba(255,107,53,.04);border:1px solid var(--b1);
+          border-radius:2px;font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);">
+          Broker: Deriv.com &nbsp;|&nbsp; Type: Demo/Virtual &nbsp;|&nbsp; 
+          Synthetic: <span style="color:var(--g);">24/7 ✅</span> &nbsp;|&nbsp;
+          Forex: <span style="color:var(--g);">Mon-Fri ✅</span>
+        </div>`;
+    } else {
+      el.innerHTML=`<div style="color:var(--r);text-align:center;padding:20px;">❌ ${d.error||'Cannot connect to Deriv'}</div>`;
+    }
+  }catch(e){
+    document.getElementById('accountInfo').innerHTML=`<div style="color:var(--r);text-align:center;padding:20px;">❌ ${e.message}</div>`;
+  }
+}
+
+function addLog(type,msg){
+  const el=document.getElementById('aiLog');
+  if(el.children.length===1&&el.children[0].textContent==='ລໍຖ້າ...') el.innerHTML='';
+  const t=new Date().toTimeString().split(' ')[0];
+  const d=document.createElement('div'); d.className='ll '+type;
+  d.innerHTML=`<span class="ll-t">${t}</span>${msg}`;
+  el.appendChild(d);
+  while(el.children.length>80) el.removeChild(el.firstChild);
+  el.scrollTop=el.scrollHeight;
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// Init
+checkHealth();
+setInterval(loadStats, 30000);
+setInterval(()=>{
+  if(document.getElementById('page-bots').classList.contains('on')) loadBots();
+},30000);
+addLog('ai','🚀 SocialGuard DERIV loaded');
+addLog('ai','📡 Connecting to Deriv WebSocket...');
+</script>
+</body>
+</html>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialGuard FOREX</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&family=Orbitron:wght@600;900&display=swap');
+:root{
+  --bg:#05080f;--p1:#080d1a;--p2:#0d1525;
+  --b1:#132040;--b2:#1e3060;
+  --a:#4db8ff;--a2:#2080cc;
+  --g:#00e87a;--r:#ff4466;
+  --y:#ffcc00;--o:#ff8833;
+  --pu:#aa77ff;--tx:#8ab4d4;--dim:#2a4060;
+  --glow:0 0 30px rgba(77,184,255,.2);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 5% 0%,rgba(77,184,255,.06) 0%,transparent 50%),
+             radial-gradient(ellipse at 95% 100%,rgba(170,119,255,.04) 0%,transparent 50%),
+             linear-gradient(rgba(77,184,255,.01) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(77,184,255,.01) 1px,transparent 1px);
+  background-size:100%,100%,32px 32px,32px 32px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;
+  border-bottom:1px solid var(--b1);background:rgba(5,8,15,.95);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;}
+.logo{font-family:'Orbitron',monospace;font-size:14px;letter-spacing:3px;color:var(--a);text-shadow:var(--glow);}
+.logo em{color:var(--g);font-style:normal;}
+.hdr-r{display:flex;gap:8px;align-items:center;}
+.chip{padding:3px 10px;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;display:flex;align-items:center;gap:4px;}
+.chip.con{background:rgba(0,232,122,.07);border:1px solid rgba(0,232,122,.3);color:var(--g);}
+.chip.ai{background:rgba(170,119,255,.1);border:1px solid rgba(170,119,255,.3);color:var(--pu);}
+.chip.off{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.3);color:var(--r);}
+.dot{width:5px;height:5px;border-radius:50%;animation:bl 1.5s infinite;}
+.dot.g{background:var(--g);}  .dot.p{background:var(--pu);}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* Tabs */
+.tabs{display:flex;padding:0 20px;background:rgba(5,8,15,.8);border-bottom:1px solid var(--b1);}
+.tab{padding:10px 18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;
+  color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.tab:hover{color:var(--tx);} .tab.on{color:var(--a);border-bottom-color:var(--a);}
+
+/* Pages */
+.page{display:none;padding:16px 20px;} .page.on{display:block;}
+
+/* Stats */
+.sbar{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:14px;}
+.sc{background:var(--p1);border:1px solid var(--b1);border-radius:3px;padding:9px 12px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--a),transparent);opacity:.2;}
+.sc-l{font-size:8px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.sc-v{font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--a);}
+.sc-v.g{color:var(--g);} .sc-v.r{color:var(--r);} .sc-v.y{color:var(--y);}
+.sc-s{font-size:9px;color:var(--dim);margin-top:1px;}
+
+/* Layout */
+.g2{display:grid;grid-template-columns:300px 1fr;gap:12px;}
+
+/* Panel */
+.pnl{background:var(--p1);border:1px solid var(--b1);border-radius:3px;overflow:hidden;margin-bottom:10px;}
+.ph{background:rgba(77,184,255,.04);border-bottom:1px solid var(--b1);padding:8px 14px;
+  font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--a);display:flex;align-items:center;gap:6px;}
+.pd{width:6px;height:6px;border-radius:50%;background:var(--dim);}
+.pd.g{background:var(--g);box-shadow:0 0 4px var(--g);animation:bl 2s infinite;}
+.pd.p{background:var(--pu);box-shadow:0 0 4px var(--pu);animation:bl 1.5s infinite;}
+.pb{padding:13px;}
+
+/* Form */
+.fl{display:block;font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;margin-top:8px;}
+.fi{width:100%;background:rgba(0,0,0,.5);border:1px solid var(--b1);color:var(--tx);
+  font-family:'JetBrains Mono',monospace;font-size:11px;padding:7px 10px;border-radius:2px;outline:none;transition:border-color .2s;}
+.fi:focus{border-color:var(--a);} .fi option{background:#080d1a;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+
+/* Buttons */
+.btn{padding:10px 18px;border:none;border-radius:2px;font-family:'JetBrains Mono',monospace;
+  font-size:10px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s;}
+.btn.pri{background:linear-gradient(135deg,var(--pu),#6633cc);color:#fff;box-shadow:0 0 20px rgba(170,119,255,.2);}
+.btn.pri:hover{box-shadow:0 0 35px rgba(170,119,255,.4);transform:translateY(-1px);}
+.btn.buy{background:linear-gradient(135deg,var(--g),#008844);color:#000;}
+.btn.sell{background:linear-gradient(135deg,var(--r),#aa2233);color:#fff;}
+.btn.full{width:100%;padding:12px;font-size:11px;letter-spacing:2px;font-family:'Orbitron',monospace;}
+
+/* Pair cards */
+.pair-card{background:rgba(0,0,0,.35);border:1px solid var(--b1);border-radius:3px;padding:12px;
+  margin-bottom:8px;transition:border-color .2s;}
+.pair-card:hover{border-color:rgba(77,184,255,.3);}
+.pair-card.A{border-color:rgba(255,204,0,.4);}
+.pair-card.B{border-color:rgba(170,119,255,.3);}
+.pc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.pc-name{font-family:'Orbitron',monospace;font-size:13px;color:var(--a);}
+.pc-price{font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--y);}
+.signal-chip{padding:3px 10px;border-radius:1px;font-size:9px;font-weight:700;letter-spacing:1px;}
+.signal-chip.BUY{background:rgba(0,232,122,.1);border:1px solid rgba(0,232,122,.4);color:var(--g);}
+.signal-chip.SELL{background:rgba(255,68,102,.1);border:1px solid rgba(255,68,102,.4);color:var(--r);}
+.signal-chip.HOLD{background:rgba(77,184,255,.1);border:1px solid rgba(77,184,255,.3);color:var(--a);}
+.pc-row{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;
+  font-size:9px;color:var(--dim);margin-top:3px;}
+.pc-row span:last-child{color:var(--tx);}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;}
+.tag{padding:2px 7px;border-radius:1px;font-size:8px;font-weight:700;
+  background:rgba(77,184,255,.08);border:1px solid rgba(77,184,255,.2);color:var(--a);}
+.tag.g{background:rgba(0,232,122,.08);border-color:rgba(0,232,122,.2);color:var(--g);}
+
+/* Trade cards */
+.trade-card{background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:3px;padding:10px 12px;
+  margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.trade-pair{font-family:'Orbitron',monospace;font-size:11px;color:var(--a);min-width:80px;}
+.trade-pnl{font-family:'JetBrains Mono',monospace;font-size:13px;margin-left:auto;}
+
+/* Forex table */
+.fx-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:10px;}
+.fx-table th{padding:6px 8px;color:var(--dim);font-size:8px;letter-spacing:1px;
+  border-bottom:1px solid var(--b1);text-align:left;font-weight:400;}
+.fx-table td{padding:5px 8px;border-bottom:1px solid rgba(19,32,64,.5);}
+.fx-table tr:hover td{background:rgba(77,184,255,.03);}
+
+/* AI Log */
+.ai-log{max-height:180px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:3px;}
+.ll{padding:2px 7px;border-left:2px solid var(--b1);font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--dim);}
+.ll.ai{border-left-color:var(--pu);color:var(--tx);}
+.ll.ok{border-left-color:var(--g);color:var(--g);}
+.ll.err{border-left-color:var(--r);color:var(--r);}
+.ll.warn{border-left-color:var(--y);color:var(--y);}
+.ll-t{color:var(--dim);margin-right:5px;font-size:9px;}
+
+/* Note */
+.note{background:rgba(255,136,51,.06);border:1px solid rgba(255,136,51,.2);border-radius:2px;
+  padding:8px 11px;font-size:10px;color:var(--o);line-height:1.7;margin-top:8px;}
+
+/* Thinking */
+.think{padding:40px;text-align:center;display:none;}
+.think.show{display:block;}
+.think-icon{font-size:44px;animation:bounce .7s infinite alternate;}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-8px)}}
+.think-title{font-family:'Orbitron',monospace;font-size:12px;color:var(--pu);letter-spacing:2px;margin:10px 0 5px;}
+.prog{width:220px;height:2px;background:var(--b1);border-radius:1px;margin:8px auto;overflow:hidden;}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--pu),var(--a));transition:width .4s;}
+
+@media(max-width:900px){.g2{grid-template-columns:1fr;}.sbar{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">SOCIAL<em>GUARD</em> <em>FX</em></div>
+  <div class="hdr-r">
+    <div class="chip ai"><div class="dot p"></div><span id="aiBadge">3 AI Consensus</span></div>
+    <div class="chip con"><div class="dot g"></div><span id="hdrStatus">CONNECTING...</span></div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab on" onclick="showTab('analyze')">🤖 AI Analyze</div>
+  <div class="tab" onclick="showTab('market')">📊 Market</div>
+  <div class="tab" onclick="showTab('trades')">💼 Trades</div>
+  <div class="tab" onclick="showTab('account')">💰 Account</div>
+</nav>
+
+<!-- ═══ ANALYZE ═══ -->
+<div class="page on" id="page-analyze">
+  <div class="sbar">
+    <div class="sc"><div class="sc-l">Balance</div><div class="sc-v y" id="sBalance">—</div><div class="sc-s">USD</div></div>
+    <div class="sc"><div class="sc-l">Unrealized P/L</div><div class="sc-v" id="sUPL">—</div><div class="sc-s">open trades</div></div>
+    <div class="sc"><div class="sc-l">Realized P/L</div><div class="sc-v" id="sRPL">—</div><div class="sc-s">closed</div></div>
+    <div class="sc"><div class="sc-l">Open Trades</div><div class="sc-v" id="sOpenTrades">—</div><div class="sc-s">OANDA</div></div>
+    <div class="sc"><div class="sc-l">Environment</div><div class="sc-v g" id="sEnv">DEMO</div><div class="sc-s">practice</div></div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd p"></div>AI SETTINGS</div>
+        <div class="pb">
+          <span class="fl">Pairs ທີ່ຈະ trade</span>
+          <select class="fi" id="count">
+            <option value="2">2 pairs</option>
+            <option value="3" selected>3 pairs</option>
+            <option value="4">4 pairs</option>
+            <option value="5">5 pairs</option>
+          </select>
+          <span class="fl">Risk Level</span>
+          <select class="fi" id="risk">
+            <option value="low">🛡 Low — 1,000 units</option>
+            <option value="med">⚖ Medium — 2,000 units</option>
+            <option value="high">🔥 High — 5,000 units</option>
+          </select>
+          <span class="fl">Mode</span>
+          <select class="fi" id="mode">
+            <option value="sim">🧪 Simulation</option>
+            <option value="live">⚡ Live (OANDA)</option>
+          </select>
+          <button class="btn pri full" id="analyzeBtn" onclick="runAnalyze()" style="margin-top:10px;">
+            🤖 AI ANALYZE FOREX
+          </button>
+          <div class="note">💡 AI ວິເຄາະ EUR/USD, GBP/USD, USD/JPY ແລະ pairs ອື່ນໆ ດ້ວຍ RSI MACD BB + 3 AI Consensus</div>
+        </div>
+      </div>
+      <div class="pnl">
+        <div class="ph"><div class="pd p"></div>AI LOG</div>
+        <div class="ai-log" id="aiLog"><div class="ll">ລໍຖ້າ...</div></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="pnl" id="thinkPanel" style="display:none;">
+        <div class="think show">
+          <div class="think-icon">📈</div>
+          <div class="think-title">ANALYZING FOREX MARKET</div>
+          <div id="thinkMsg" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);margin-bottom:8px;">ກຳລັງດຶງ OANDA data...</div>
+          <div class="prog"><div class="prog-f" id="progF" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <div id="resultsWrap" style="display:none;">
+        <div class="pnl">
+          <div class="ph"><div class="pd p"></div>AI RECOMMENDATIONS</div>
+          <div style="background:rgba(170,119,255,.06);border:1px solid rgba(170,119,255,.2);border-radius:2px;padding:10px 14px;margin:10px;font-size:11px;line-height:1.8;" id="aiSum">—</div>
+          <div style="padding:10px 12px;" id="pairsGrid"></div>
+        </div>
+      </div>
+
+      <div class="pnl" id="emptyState">
+        <div style="padding:50px;text-align:center;color:var(--dim);">
+          <div style="font-size:48px;margin-bottom:12px;">📈</div>
+          <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--pu);letter-spacing:2px;margin-bottom:8px;">FOREX READY</div>
+          <div style="font-size:11px;line-height:1.9;">ກົດ <strong style="color:var(--a)">AI ANALYZE FOREX</strong><br>3 AI ວິເຄາະ 10 currency pairs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MARKET ═══ -->
+<div class="page" id="page-market">
+  <div class="pnl">
+    <div class="ph"><div class="pd g"></div>LIVE FOREX — OANDA
+      <button onclick="loadMarket()" style="margin-left:auto;padding:3px 10px;background:rgba(77,184,255,.1);border:1px solid var(--a2);border-radius:2px;color:var(--a);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:9px;">↺ REFRESH</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="fx-table">
+        <thead><tr>
+          <th>Pair</th><th>Bid</th><th>Ask</th><th>Spread</th>
+          <th>24h %</th><th>RSI</th><th>MACD</th><th>Score</th><th>Grade</th>
+        </tr></thead>
+        <tbody id="mktBody"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--dim);">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TRADES ═══ -->
+<div class="page" id="page-trades">
+  <div class="r2">
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd g"></div>OPEN TRADES</div>
+        <div style="padding:10px;" id="openTradesList"><div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ trades</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="pnl">
+        <div class="ph"><div class="pd"></div>CLOSED TRADES (Last 20)</div>
+        <div style="padding:10px;" id="closedTradesList"><div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ trades</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ACCOUNT ═══ -->
+<div class="page" id="page-account">
+  <div class="pnl">
+    <div class="ph"><div class="pd g"></div>OANDA ACCOUNT</div>
+    <div style="padding:20px;" id="accountInfo">
+      <div style="color:var(--dim);text-align:center;padding:20px;">Loading...</div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const API = '';
+let lastPicks = [];
+
+function showTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const p=['analyze','market','trades','account'];
+    t.classList.toggle('on',p[i]===name);
+  });
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.getElementById('page-'+name).classList.add('on');
+  if(name==='market')  loadMarket();
+  if(name==='trades')  loadTrades();
+  if(name==='account') loadAccount();
+}
+
+async function checkHealth(){
+  try{
+    const r=await fetch(API+'/api/health',{credentials:'include'});
+    if(r.status===401){window.location.href='/login';return;}
+    const d=await r.json();
+    document.getElementById('hdrStatus').textContent='CONNECTED ✅';
+    document.getElementById('sEnv').textContent=d.env==='practice'?'DEMO':'LIVE';
+    document.getElementById('sEnv').className='sc-v '+(d.env==='practice'?'g':'r');
+    loadAccountStats();
+  }catch(e){
+    document.getElementById('hdrStatus').textContent='OFFLINE';
+    document.getElementById('hdrStatus').parentElement.className='chip off';
+  }
+}
+
+async function loadAccountStats(){
+  try{
+    const r=await fetch(API+'/api/account',{credentials:'include'});
+    if(!r.ok) return;
+    const d=await r.json();
+    if(d.ok){
+      document.getElementById('sBalance').textContent=d.balance?.toFixed(2)||'—';
+      const upl=d.unrealizedPL||0;
+      document.getElementById('sUPL').textContent=(upl>=0?'+':'')+upl.toFixed(2);
+      document.getElementById('sUPL').className='sc-v '+(upl>=0?'g':'r');
+      const rpl=d.realizedPL||0;
+      document.getElementById('sRPL').textContent=(rpl>=0?'+':'')+rpl.toFixed(2);
+      document.getElementById('sRPL').className='sc-v '+(rpl>=0?'g':'r');
+      document.getElementById('sOpenTrades').textContent=d.openTrades||0;
+    }
+  }catch{}
+}
+
+async function runAnalyze(){
+  const btn=document.getElementById('analyzeBtn');
+  btn.textContent='⏳ Analyzing...'; btn.disabled=true;
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('resultsWrap').style.display='none';
+  document.getElementById('thinkPanel').style.display='block';
+
+  const steps=['ດຶງ OANDA rates...','ຄຳນວນ RSI indicators...','ຄຳນວນ MACD+BB...','Claude AI ວິເຄາະ...','ChatGPT ວິເຄາະ...','Gemini ວິເຄາະ...','Consensus voting...'];
+  let prog=0;
+  const pi=setInterval(()=>{
+    prog=Math.min(prog+8,85);
+    document.getElementById('progF').style.width=prog+'%';
+    document.getElementById('thinkMsg').textContent=steps[Math.floor(prog/13)]||steps[6];
+  },400);
+
+  addLog('ai','🤖 3 AI ກຳລັງວິເຄາະ Forex...');
+
+  try{
+    const r=await fetch(API+'/api/analyze',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        count:+document.getElementById('count').value||3,
+        risk:document.getElementById('risk').value,
+        capital:1000,
+      })
+    });
+    if(!r.ok) throw new Error(await r.text());
+    const data=await r.json();
+    clearInterval(pi);
+    document.getElementById('progF').style.width='100%';
+    await sleep(300);
+    document.getElementById('thinkPanel').style.display='none';
+    renderResults(data);
+    addLog('ok',`✅ AI ເລືອກ ${data.picks?.length||0} pairs: ${data.picks?.map(p=>p.pair).join(', ')}`);
+  }catch(e){
+    clearInterval(pi);
+    document.getElementById('thinkPanel').style.display='none';
+    document.getElementById('emptyState').style.display='block';
+    addLog('err','❌ '+e.message);
+  }
+  btn.textContent='🔄 RE-ANALYZE'; btn.disabled=false;
+}
+
+function renderResults(r){
+  document.getElementById('aiSum').textContent=r.marketSummary||'—';
+  const grid=document.getElementById('pairsGrid');
+  grid.innerHTML='';
+  lastPicks=r.picks||[];
+
+  lastPicks.forEach((p,i)=>{
+    const sig=p.signal||'HOLD';
+    const card=document.createElement('div');
+    card.className=`pair-card ${p.grade||''}`;
+    card.innerHTML=`
+      <div class="pc-top">
+        <div>
+          <div class="pc-name">${p.pair.replace('_','/')}</div>
+          <div style="font-size:9px;color:var(--dim);">${p.name} — ${p.votes||'AI Pick'}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="pc-price">${p.currentPrice||'—'}</div>
+          <span class="signal-chip ${sig}">${sig}</span>
+        </div>
+      </div>
+      <div style="background:rgba(77,184,255,.06);border:1px solid rgba(77,184,255,.12);border-radius:2px;padding:8px;font-family:'JetBrains Mono',monospace;font-size:9px;line-height:2;">
+        <div style="color:var(--pu);font-family:'Orbitron',monospace;font-size:8px;letter-spacing:1px;margin-bottom:4px;">📊 TRADE SETTINGS</div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Entry:</span><span style="color:var(--a);">${p.entry||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Take Profit:</span><span style="color:var(--g);">${p.tp||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Stop Loss:</span><span style="color:var(--r);">${p.sl||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Units:</span><span>${p.units||1000}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Spread:</span><span>${p.spread||'—'} pips</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">ATR:</span><span>${p.atrPips||'—'} pips</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">R:R:</span><span style="color:var(--y);">${p.riskReward||'1:1.5'}</span></div>
+        <div style="display:flex;justify-content:space-between;"><span style="color:var(--dim);">Score:</span><span style="color:${p.aiScore>=80?'var(--y)':'var(--a)'};">${p.aiScore||'—'}/100 [${p.grade||'?'}]</span></div>
+      </div>
+      <div style="font-size:10px;color:var(--tx);line-height:1.6;margin-top:6px;">${p.whyPick||'—'}</div>
+      <div class="tags">${(p.tags||[]).map(t=>`<span class="tag ${t.includes('✅')?'g':''}">${t}</span>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;">
+        <button onclick="applyTrade(${i},'${sig}')" style="padding:8px;border:none;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;background:${sig==='BUY'?'rgba(0,232,122,.15)':'rgba(255,68,102,.15)'};border:1px solid ${sig==='BUY'?'var(--g)':'var(--r)'};color:${sig==='BUY'?'var(--g)':'var(--r)'};">▶ ${sig} ${p.pair.replace('_','/')}</button>
+        <button onclick="applyTrade(${i},'${sig==='BUY'?'SELL':'BUY'}')" style="padding:8px;border:none;border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;background:rgba(77,184,255,.08);border:1px solid var(--b2);color:var(--a);">Opposite</button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('resultsWrap').style.display='block';
+}
+
+async function applyTrade(i, signal){
+  const p=lastPicks[i]; if(!p) return;
+  const mode=document.getElementById('mode').value;
+  try{
+    const r=await fetch(API+'/api/trade',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        pair:p.pair, signal, units:p.units||1000,
+        tp:p.tp, sl:p.sl, mode,
+      })
+    });
+    const d=await r.json();
+    if(d.ok) addLog('ok',`✅ ${signal} ${p.pair.replace('_','/')} @ ${d.trade?.entry} [${mode.toUpperCase()}]`);
+    else addLog('err','❌ '+d.error);
+  }catch(e){addLog('err','❌ '+e.message);}
+}
+
+async function loadMarket(){
+  try{
+    const r=await fetch(API+'/api/market',{credentials:'include'});
+    const d=await r.json();
+    const tbody=document.getElementById('mktBody');
+    tbody.innerHTML='';
+    (d.pairs||[]).forEach(p=>{
+      const chg=p.change24h||0; const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td style="color:var(--a);font-weight:700;">${p.pair.replace('_','/')}</td>
+        <td style="font-family:'JetBrains Mono',monospace;">${p.bid}</td>
+        <td style="font-family:'JetBrains Mono',monospace;">${p.ask}</td>
+        <td style="color:${p.spreadPips<=2?'var(--g)':'var(--y)'};">${p.spreadPips}p</td>
+        <td style="color:${chg>=0?'var(--g)':'var(--r)'};">${chg>=0?'+':''}${chg}%</td>
+        <td style="color:${p.rsi<35?'var(--g)':p.rsi>65?'var(--r)':'var(--tx)'};">${p.rsi?.toFixed(1)||'—'}</td>
+        <td style="color:${p.macd?.cross==='bullish'?'var(--g)':'var(--r)'};">${p.macd?.cross||'—'}</td>
+        <td style="font-family:'JetBrains Mono',monospace;color:${p.aiScore>=80?'var(--y)':'var(--tx)'};">${p.aiScore||'—'}</td>
+        <td style="color:${p.grade==='A'?'var(--y)':p.grade==='B'?'var(--pu)':'var(--a)'};">${p.grade||'—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }catch(e){document.getElementById('mktBody').innerHTML=`<tr><td colspan="9" style="text-align:center;color:var(--r);padding:20px;">❌ ${e.message}</td></tr>`;}
+}
+
+async function loadTrades(){
+  try{
+    const r=await fetch(API+'/api/trades',{credentials:'include'});
+    const d=await r.json();
+    const open=document.getElementById('openTradesList');
+    const closed=document.getElementById('closedTradesList');
+    if(!d.open?.length) open.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ open trades</div>';
+    else open.innerHTML=d.open.map(t=>`
+      <div class="trade-card">
+        <div class="trade-pair">${t.pair?.replace('_','/')}</div>
+        <span class="signal-chip ${t.signal}" style="font-size:8px;">${t.signal}</span>
+        <span style="font-size:9px;color:var(--dim);">${t.units} units @ ${t.entry}</span>
+        <span style="font-size:9px;padding:2px 6px;border-radius:1px;background:${t.mode==='live'?'rgba(255,204,0,.1)':'rgba(0,232,122,.08)'};border:1px solid ${t.mode==='live'?'var(--y)':'var(--g)'};color:${t.mode==='live'?'var(--y)':'var(--g)'};">${t.mode==='live'?'⚡ LIVE':'🧪 SIM'}</span>
+        <div class="trade-pnl" style="color:${t.pnl>=0?'var(--g)':'var(--r)'};">${t.pnl>=0?'+':''}${t.pnl?.toFixed(4)}</div>
+        <button onclick="closeTrade('${t.id}','${t.mode}')" style="padding:4px 10px;border:1px solid var(--r);border-radius:2px;background:rgba(255,68,102,.1);color:var(--r);cursor:pointer;font-size:9px;">CLOSE</button>
+      </div>`).join('');
+
+    if(!d.closed?.length) closed.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;">ບໍ່ມີ closed trades</div>';
+    else closed.innerHTML=d.closed.map(t=>`
+      <div class="trade-card" style="opacity:0.7;">
+        <div class="trade-pair">${t.pair?.replace('_','/')}</div>
+        <span class="signal-chip ${t.signal}" style="font-size:8px;">${t.signal}</span>
+        <div class="trade-pnl" style="color:${t.pnl>=0?'var(--g)':'var(--r)'};">${t.pnl>=0?'+':''}${t.pnl?.toFixed(4)}</div>
+        <span style="font-size:8px;color:var(--dim);">${t.closed?.split('T')[1]?.split('.')[0]||'—'}</span>
+      </div>`).join('');
+  }catch{}
+}
+
+async function closeTrade(id, mode){
+  try{
+    const r=await fetch(API+'/api/close',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({trade_id:id,mode})
+    });
+    const d=await r.json();
+    addLog('ok',`⏹ Trade closed — P/L: ${d.pnl>=0?'+':''}${d.pnl?.toFixed(4)}`);
+    loadTrades();
+  }catch(e){addLog('err','❌ '+e.message);}
+}
+
+async function loadAccount(){
+  try{
+    const r=await fetch(API+'/api/account',{credentials:'include'});
+    const d=await r.json();
+    const el=document.getElementById('accountInfo');
+    if(d.ok){
+      el.innerHTML=`
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:12px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:5px;">BALANCE</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--y);">${d.balance?.toFixed(2)}</div>
+            <div style="font-size:9px;color:var(--dim);">${d.currency}</div>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:12px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:5px;">UNREALIZED P/L</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:${d.unrealizedPL>=0?'var(--g)':'var(--r)'};">${d.unrealizedPL>=0?'+':''}${d.unrealizedPL?.toFixed(2)}</div>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:12px;text-align:center;">
+            <div style="font-size:8px;color:var(--dim);letter-spacing:1px;margin-bottom:5px;">REALIZED P/L</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:20px;color:${d.realizedPL>=0?'var(--g)':'var(--r)'};">${d.realizedPL>=0?'+':''}${d.realizedPL?.toFixed(2)}</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;padding:10px;background:rgba(77,184,255,.04);border:1px solid var(--b1);border-radius:2px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);">
+          Open Trades: <span style="color:var(--a);">${d.openTrades}</span> &nbsp;|&nbsp;
+          NAV: <span style="color:var(--y);">${d.nav?.toFixed(2)}</span> &nbsp;|&nbsp;
+          Environment: <span style="color:var(--g);">DEMO (Practice)</span>
+        </div>`;
+    } else {
+      el.innerHTML=`<div style="color:var(--r);text-align:center;padding:20px;">❌ ${d.error||'Cannot connect to OANDA'}</div>`;
+    }
+  }catch(e){
+    document.getElementById('accountInfo').innerHTML=`<div style="color:var(--r);text-align:center;padding:20px;">❌ ${e.message}</div>`;
+  }
+}
+
+function addLog(type,msg){
+  const el=document.getElementById('aiLog');
+  if(el.children.length===1&&el.children[0].textContent==='ລໍຖ້າ...') el.innerHTML='';
+  const t=new Date().toTimeString().split(' ')[0];
+  const d=document.createElement('div');
+  d.className='ll '+type;
+  d.innerHTML=`<span class="ll-t">${t}</span>${msg}`;
+  el.appendChild(d);
+  while(el.children.length>80) el.removeChild(el.firstChild);
+  el.scrollTop=el.scrollHeight;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+checkHealth();
+setInterval(loadAccountStats, 30000);
+addLog('ai','🚀 SocialGuard FOREX loaded');
+addLog('ai','📡 Connecting to OANDA...');
+</script>
+</body>
+</html>

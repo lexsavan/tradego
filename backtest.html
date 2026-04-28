@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialGuard PRO — Backtesting</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;800&family=Orbitron:wght@600;700;900&display=swap');
+:root{
+  --bg:#010c12;--p1:#051420;--p2:#081c2c;
+  --b1:#0a2c3c;--b2:#155068;
+  --a:#00f0d0;--a2:#009e8c;
+  --g:#00ff9d;--r:#ff3355;
+  --y:#ffd84d;--o:#ff8c42;
+  --bl:#38ccff;--pu:#b48bff;
+  --tx:#8ed4eb;--dim:#1e5060;
+  --glow:0 0 28px rgba(0,240,208,.18);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--tx);font-family:'Exo 2',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 10% 5%,rgba(0,240,208,.07) 0%,transparent 40%),
+             radial-gradient(ellipse at 90% 95%,rgba(180,139,255,.05) 0%,transparent 40%),
+             linear-gradient(rgba(0,240,208,.013) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(0,240,208,.013) 1px,transparent 1px);
+  background-size:100%,100%,28px 28px,28px 28px;pointer-events:none;z-index:0;}
+.wrap{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:14px 16px;}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;border-bottom:1px solid var(--b1);margin-bottom:14px;}
+.logo{font-family:'Orbitron',monospace;font-size:16px;color:var(--a);letter-spacing:3px;text-shadow:var(--glow);}
+.logo em{color:var(--g);font-style:normal;}
+.back-btn{padding:6px 14px;background:rgba(0,240,208,.08);border:1px solid var(--a2);border-radius:2px;color:var(--a);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-decoration:none;letter-spacing:1px;}
+.back-btn:hover{background:rgba(0,240,208,.15);}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:14px;}
+.sc{background:var(--p1);border:1px solid var(--b1);border-radius:3px;padding:9px 12px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--a),transparent);opacity:.25;}
+.sc-l{font-size:8px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px;}
+.sc-v{font-family:'Share Tech Mono',monospace;font-size:16px;color:var(--a);}
+.sc-v.g{color:var(--g);} .sc-v.r{color:var(--r);} .sc-v.y{color:var(--y);} .sc-v.p{color:var(--pu);}
+.sc-s{font-size:9px;color:var(--dim);margin-top:1px;}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:300px 1fr;gap:12px;}
+
+/* Panel */
+.pnl{background:var(--p1);border:1px solid var(--b1);border-radius:3px;overflow:hidden;margin-bottom:10px;}
+.ph{background:rgba(0,240,208,.04);border-bottom:1px solid var(--b1);padding:8px 13px;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;color:var(--a);display:flex;align-items:center;gap:6px;}
+.pd{width:6px;height:6px;border-radius:50%;background:var(--dim);}
+.pd.g{background:var(--g);box-shadow:0 0 5px var(--g);animation:bl 2s infinite;}
+.pd.y{background:var(--y);box-shadow:0 0 5px var(--y);}
+.pd.r{background:var(--r);box-shadow:0 0 5px var(--r);}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.pb{padding:13px;}
+
+/* Form */
+.fl{display:block;font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;margin-top:8px;}
+.fi{width:100%;background:rgba(0,0,0,.45);border:1px solid var(--b1);color:var(--tx);font-family:'Share Tech Mono',monospace;font-size:11px;padding:7px 10px;border-radius:2px;outline:none;transition:border-color .2s;}
+.fi:focus{border-color:var(--a);}
+.fi option{background:#051420;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+
+/* Strategy tabs */
+.strat-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:5px;}
+.st{padding:8px;border:1px solid var(--b1);border-radius:2px;text-align:center;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.5px;background:rgba(0,0,0,.3);color:var(--dim);transition:all .15s;text-transform:uppercase;}
+.st:hover,.st.on{border-color:var(--a);color:var(--a);background:rgba(0,240,208,.07);}
+
+/* Run button */
+.run-btn{width:100%;padding:13px;border:none;border-radius:2px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all .2s;margin-top:10px;position:relative;overflow:hidden;}
+.run-btn.ready{background:linear-gradient(135deg,var(--pu),#7c3aed);color:#fff;box-shadow:0 0 25px rgba(180,139,255,.25);}
+.run-btn.ready:hover{box-shadow:0 0 40px rgba(180,139,255,.45);transform:translateY(-1px);}
+.run-btn.loading{background:rgba(180,139,255,.15);border:1px solid var(--pu);color:var(--pu);cursor:not-allowed;}
+
+/* Progress */
+.prog-wrap{margin-top:10px;display:none;}
+.prog-wrap.show{display:block;}
+.prog-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);margin-bottom:5px;}
+.prog-bar{height:3px;background:var(--b1);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--pu),var(--a));transition:width .4s;}
+
+/* Chart */
+.chart-wrap{padding:12px;position:relative;}
+#equityCanvas{width:100%;display:block;border-radius:2px;}
+.chart-legend{display:flex;gap:16px;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);}
+.legend-item{display:flex;align-items:center;gap:5px;}
+.legend-dot{width:10px;height:3px;border-radius:1px;}
+
+/* Trade log */
+.trade-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:10px;}
+.trade-table th{padding:5px 8px;color:var(--dim);font-size:8px;letter-spacing:1px;border-bottom:1px solid var(--b1);text-align:left;font-weight:400;}
+.trade-table td{padding:4px 8px;border-bottom:1px solid rgba(10,44,60,.4);}
+.trade-table tr:hover td{background:rgba(0,240,208,.03);}
+.tp{color:var(--g);font-weight:bold;}
+.sl{color:var(--r);font-weight:bold;}
+.dca{color:var(--pu);}
+
+/* Result cards */
+.result-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;}
+.rc{background:rgba(0,0,0,.3);border:1px solid var(--b1);border-radius:2px;padding:10px 12px;text-align:center;}
+.rc-label{font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.rc-val{font-family:'Share Tech Mono',monospace;font-size:18px;}
+.rc-sub{font-size:9px;color:var(--dim);margin-top:2px;}
+
+/* Compare table */
+.cmp-table{width:100%;border-collapse:collapse;font-family:'Share Tech Mono',monospace;font-size:10px;}
+.cmp-table th{padding:6px 10px;color:var(--dim);font-size:8px;letter-spacing:1px;border-bottom:1px solid var(--b1);font-weight:400;}
+.cmp-table td{padding:6px 10px;border-bottom:1px solid rgba(10,44,60,.4);text-align:center;}
+.cmp-table tr:hover td{background:rgba(0,240,208,.02);}
+.best{color:var(--g);font-weight:bold;}
+
+/* Empty state */
+.empty{padding:60px;text-align:center;color:var(--dim);}
+.empty-icon{font-size:48px;margin-bottom:14px;}
+.empty-title{font-family:'Orbitron',monospace;font-size:13px;color:var(--pu);letter-spacing:2px;margin-bottom:8px;}
+
+/* Note */
+.note{background:rgba(255,140,66,.06);border:1px solid rgba(255,140,66,.2);border-radius:2px;padding:7px 10px;font-size:10px;color:var(--o);line-height:1.7;margin-top:8px;}
+
+@media(max-width:900px){.layout{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="logo">SOCIAL<em>GUARD</em> PRO · <em>BACKTEST</em></div>
+  <a href="/dashboard" class="back-btn">← DASHBOARD</a>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="sc"><div class="sc-l">Total P/L</div><div class="sc-v g" id="sTotalPnl">—</div><div class="sc-s" id="sTotalPct">—</div></div>
+  <div class="sc"><div class="sc-l">Daily Return</div><div class="sc-v y" id="sDailyRet">—</div><div class="sc-s">avg per day</div></div>
+  <div class="sc"><div class="sc-l">Win Rate</div><div class="sc-v" id="sWinRate">—</div><div class="sc-s" id="sTradeCount">—</div></div>
+  <div class="sc"><div class="sc-l">Max Drawdown</div><div class="sc-v r" id="sMaxDD">—</div><div class="sc-s">peak to trough</div></div>
+  <div class="sc"><div class="sc-l">Final Equity</div><div class="sc-v p" id="sFinalEq">—</div><div class="sc-s" id="sCapital">Capital: —</div></div>
+  <div class="sc"><div class="sc-l">Price Change</div><div class="sc-v" id="sPriceChg">—</div><div class="sc-s" id="sPricePair">—</div></div>
+</div>
+
+<div class="layout">
+
+  <!-- LEFT: Config -->
+  <div>
+    <div class="pnl">
+      <div class="ph"><div class="pd y"></div>BACKTEST SETTINGS</div>
+      <div class="pb">
+
+        <span class="fl">Symbol</span>
+        <select class="fi" id="symbol">
+          <option value="DGBUSDT">DGB/USDT</option>
+          <option value="BTCUSDT">BTC/USDT</option>
+          <option value="ETHUSDT">ETH/USDT</option>
+          <option value="XRPUSDT">XRP/USDT</option>
+          <option value="BNBUSDT">BNB/USDT</option>
+          <option value="SOLUSDT">SOL/USDT</option>
+          <option value="ADAUSDT">ADA/USDT</option>
+          <option value="DOGEUSDT">DOGE/USDT</option>
+          <option value="ATOMUSDT">ATOM/USDT</option>
+          <option value="LTCUSDT">LTC/USDT</option>
+          <option value="TRXUSDT">TRX/USDT</option>
+          <option value="XLMUSDT">XLM/USDT</option>
+          <option value="DOTUSDT">DOT/USDT</option>
+          <option value="MATICUSDT">MATIC/USDT</option>
+        </select>
+
+        <span class="fl">Strategy</span>
+        <div class="strat-tabs">
+          <div class="st on" data-s="grid"  onclick="setSt(this)">📊 Grid</div>
+          <div class="st"    data-s="dca"   onclick="setSt(this)">💰 DCA</div>
+          <div class="st"    data-s="combo" onclick="setSt(this)">🔥 Combo</div>
+        </div>
+
+        <div class="r2" style="margin-top:8px;">
+          <div>
+            <span class="fl">ທຶນ (USDT)</span>
+            <input class="fi" type="number" id="capital" value="200" min="20" step="10">
+          </div>
+          <div>
+            <span class="fl">ໄລຍະເວລາ</span>
+            <select class="fi" id="days">
+              <option value="7">7 ມື້</option>
+              <option value="14">14 ມື້</option>
+              <option value="30" selected>30 ມື້</option>
+              <option value="60">60 ມື້</option>
+              <option value="90">90 ມື້</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="r2">
+          <div>
+            <span class="fl">Timeframe</span>
+            <select class="fi" id="interval">
+              <option value="1h" selected>1 ຊົ່ວໂມງ</option>
+              <option value="4h">4 ຊົ່ວໂມງ</option>
+              <option value="1d">1 ວັນ</option>
+            </select>
+          </div>
+          <div>
+            <span class="fl">Grid Lines</span>
+            <input class="fi" type="number" id="gridLines" value="12" min="4" max="30">
+          </div>
+        </div>
+
+        <div class="r2">
+          <div>
+            <span class="fl">Range ↓ %</span>
+            <input class="fi" type="number" id="rangeDown" value="6" min="1" step="0.5">
+          </div>
+          <div>
+            <span class="fl">Range ↑ %</span>
+            <input class="fi" type="number" id="rangeUp" value="6" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div class="r2">
+          <div>
+            <span class="fl">Take Profit %</span>
+            <input class="fi" type="number" id="tpPct" value="0.6" min="0.1" step="0.1">
+          </div>
+          <div>
+            <span class="fl">Stop Loss %</span>
+            <input class="fi" type="number" id="slPct" value="9" min="1" step="0.5">
+          </div>
+        </div>
+
+        <div class="r3">
+          <div>
+            <span class="fl">DCA Drop %</span>
+            <input class="fi" type="number" id="dcaDrop" value="2" min="0.5" step="0.5">
+          </div>
+          <div>
+            <span class="fl">DCA Multi</span>
+            <input class="fi" type="number" id="dcaMulti" value="1.5" min="1" step="0.1">
+          </div>
+          <div>
+            <span class="fl">DCA Levels</span>
+            <input class="fi" type="number" id="dcaLevels" value="3" min="1" max="10">
+          </div>
+        </div>
+
+        <button class="run-btn ready" id="runBtn" onclick="runBacktest()">
+          ▶ RUN BACKTEST
+        </button>
+
+        <div class="prog-wrap" id="progWrap">
+          <div class="prog-label" id="progLabel">ດຶງຂໍ້ມູນ Binance...</div>
+          <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="note">
+          💡 Backtest ໃຊ້ <strong>ລາຄາຈິງ</strong> ຈາກ Binance — ຈຳລອງ strategy ໃນອະດີດ ກ່ອນໃຊ້ເງິນຈິງ.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick compare -->
+    <div class="pnl">
+      <div class="ph"><div class="pd"></div>STRATEGY COMPARE</div>
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <thead><tr>
+            <th>Strategy</th><th>P/L %</th><th>Win Rate</th><th>Max DD</th>
+          </tr></thead>
+          <tbody id="cmpBody">
+            <tr><td colspan="4" style="text-align:center;padding:16px;color:var(--dim);">Run backtest ກ່ອນ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Results -->
+  <div>
+
+    <!-- Equity Chart -->
+    <div class="pnl">
+      <div class="ph"><div class="pd g" id="chartDot"></div>EQUITY CURVE
+        <span style="margin-left:auto;font-size:8px;color:var(--dim);" id="chartInfo">—</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="equityCanvas" height="200"></canvas>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--g)"></div><span>Equity</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--dim)"></div><span>Capital baseline</span></div>
+        </div>
+      </div>
+      <!-- Empty -->
+      <div class="empty" id="emptyState">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">READY TO BACKTEST</div>
+        <div style="font-size:11px;line-height:1.8;">ຕັ້ງຄ່າ → ກົດ <strong style="color:var(--a)">RUN BACKTEST</strong><br>ຈະໃຊ້ລາຄາຈິງຈາກ Binance</div>
+      </div>
+    </div>
+
+    <!-- Result cards -->
+    <div class="pnl" id="resultPanel" style="display:none;">
+      <div class="ph"><div class="pd g"></div>RESULTS SUMMARY</div>
+      <div class="result-grid">
+        <div class="rc">
+          <div class="rc-label">Total P/L</div>
+          <div class="rc-val" id="rcPnl">—</div>
+          <div class="rc-sub" id="rcPnlPct">—</div>
+        </div>
+        <div class="rc">
+          <div class="rc-label">Daily Avg Return</div>
+          <div class="rc-val" id="rcDaily">—</div>
+          <div class="rc-sub">per day</div>
+        </div>
+        <div class="rc">
+          <div class="rc-label">Win Rate</div>
+          <div class="rc-val" id="rcWR">—</div>
+          <div class="rc-sub" id="rcTrades">—</div>
+        </div>
+        <div class="rc">
+          <div class="rc-label">Max Drawdown</div>
+          <div class="rc-val" id="rcDD">—</div>
+          <div class="rc-sub">worst decline</div>
+        </div>
+        <div class="rc">
+          <div class="rc-label">Start Price</div>
+          <div class="rc-val" id="rcStart">—</div>
+          <div class="rc-sub" id="rcEnd">—</div>
+        </div>
+        <div class="rc">
+          <div class="rc-label">Total Candles</div>
+          <div class="rc-val" id="rcBars">—</div>
+          <div class="rc-sub" id="rcInterval">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade log -->
+    <div class="pnl" id="tradePanel" style="display:none;">
+      <div class="ph"><div class="pd g"></div>RECENT TRADES (Last 20)</div>
+      <div style="overflow-x:auto;">
+        <table class="trade-table">
+          <thead><tr>
+            <th>#</th><th>Type</th><th>Price</th><th>P/L USDT</th>
+          </tr></thead>
+          <tbody id="tradeBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+const API = '';  // same origin
+let strategy = 'grid';
+let cmpResults = {};
+
+function setSt(el){
+  document.querySelectorAll('.st').forEach(x=>x.classList.remove('on'));
+  el.classList.add('on');
+  strategy = el.dataset.s;
+}
+
+async function runBacktest(){
+  const btn = document.getElementById('runBtn');
+  btn.className = 'run-btn loading';
+  btn.textContent = '⏳ Running...';
+  document.getElementById('progWrap').classList.add('show');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('resultPanel').style.display = 'none';
+  document.getElementById('tradePanel').style.display = 'none';
+
+  const steps = ['ດຶງຂໍ້ມູນ Binance...','ຈຳລອງ orders...','ຄຳນວນ P/L...','ສ້າງ chart...'];
+  let prog = 0;
+  const progInt = setInterval(()=>{
+    prog = Math.min(prog+8, 85);
+    document.getElementById('progFill').style.width = prog+'%';
+    document.getElementById('progLabel').textContent = steps[Math.floor(prog/25)]||steps[3];
+  }, 300);
+
+  try{
+    const res = await fetch(API+'/api/backtest',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      credentials:'include',
+      body: JSON.stringify({
+        symbol:      document.getElementById('symbol').value,
+        strategy,
+        capitalUSDT: +document.getElementById('capital').value||200,
+        gridLines:   +document.getElementById('gridLines').value||12,
+        rangeDown:   +document.getElementById('rangeDown').value||6,
+        rangeUp:     +document.getElementById('rangeUp').value||6,
+        tpPct:       +document.getElementById('tpPct').value||0.6,
+        slPct:       +document.getElementById('slPct').value||9,
+        dcaDropPct:  +document.getElementById('dcaDrop').value||2,
+        dcaMulti:    +document.getElementById('dcaMulti').value||1.5,
+        dcaLevels:   +document.getElementById('dcaLevels').value||3,
+        interval:    document.getElementById('interval').value,
+        days:        +document.getElementById('days').value||30,
+      })
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+
+    clearInterval(progInt);
+    document.getElementById('progFill').style.width='100%';
+    await sleep(300);
+    document.getElementById('progWrap').classList.remove('show');
+
+    renderResults(d);
+    cmpResults[strategy] = d;
+    renderCompare();
+
+  }catch(e){
+    clearInterval(progInt);
+    document.getElementById('progWrap').classList.remove('show');
+    document.getElementById('emptyState').style.display='block';
+    document.getElementById('emptyState').querySelector('.empty-title').textContent = '❌ ERROR';
+    document.getElementById('emptyState').querySelector('div:last-child').textContent = e.message+' — Start python server_pro.py';
+  }
+
+  btn.className = 'run-btn ready';
+  btn.textContent = '🔄 RE-RUN';
+}
+
+function renderResults(d){
+  const pnlOk = d.totalPnl >= 0;
+  const sym   = d.symbol.replace('USDT','/USDT');
+
+  // Stats bar
+  document.getElementById('sTotalPnl').textContent = (pnlOk?'+':'')+d.totalPnl.toFixed(4)+' USDT';
+  document.getElementById('sTotalPnl').className   = 'sc-v '+(pnlOk?'g':'r');
+  document.getElementById('sTotalPct').textContent  = (pnlOk?'+':'')+d.totalPnlPct.toFixed(2)+'%';
+  document.getElementById('sDailyRet').textContent  = (d.dailyReturn>=0?'+':'')+d.dailyReturn.toFixed(3)+'%';
+  document.getElementById('sWinRate').textContent   = d.winRate.toFixed(1)+'%';
+  document.getElementById('sTradeCount').textContent= d.totalTrades+' trades';
+  document.getElementById('sMaxDD').textContent     = d.maxDrawdown.toFixed(2)+'%';
+  document.getElementById('sFinalEq').textContent   = d.finalEquity.toFixed(2);
+  document.getElementById('sCapital').textContent   = 'Capital: '+d.capital;
+  const pchgOk = d.priceChange >= 0;
+  document.getElementById('sPriceChg').textContent  = (pchgOk?'+':'')+d.priceChange+'%';
+  document.getElementById('sPriceChg').className    = 'sc-v '+(pchgOk?'g':'r');
+  document.getElementById('sPricePair').textContent  = sym;
+
+  // Chart
+  drawEquityChart(d.equityCurve, d.capital);
+  document.getElementById('chartInfo').textContent =
+    `${sym} · ${d.strategy} · ${d.days}d · ${d.bars} bars`;
+
+  // Result cards
+  document.getElementById('rcPnl').textContent     = (pnlOk?'+':'')+d.totalPnl.toFixed(4)+' USDT';
+  document.getElementById('rcPnl').style.color      = pnlOk?'var(--g)':'var(--r)';
+  document.getElementById('rcPnlPct').textContent   = (pnlOk?'+':'')+d.totalPnlPct.toFixed(2)+'%';
+  document.getElementById('rcDaily').textContent    = (d.dailyReturn>=0?'+':'')+d.dailyReturn.toFixed(3)+'%';
+  document.getElementById('rcDaily').style.color    = d.dailyReturn>=0?'var(--g)':'var(--r)';
+  document.getElementById('rcWR').textContent       = d.winRate.toFixed(1)+'%';
+  document.getElementById('rcWR').style.color       = d.winRate>=50?'var(--g)':'var(--y)';
+  document.getElementById('rcTrades').textContent   = `W:${d.wins} L:${d.losses}`;
+  document.getElementById('rcDD').textContent       = d.maxDrawdown.toFixed(2)+'%';
+  document.getElementById('rcDD').style.color       = d.maxDrawdown<10?'var(--g)':d.maxDrawdown<20?'var(--y)':'var(--r)';
+  document.getElementById('rcStart').textContent    = d.startPrice||'—';
+  document.getElementById('rcEnd').textContent      = 'End: '+(d.endPrice||'—');
+  document.getElementById('rcBars').textContent     = d.bars;
+  document.getElementById('rcInterval').textContent = d.interval+' candles';
+
+  // Trade log
+  const tbody = document.getElementById('tradeBody');
+  tbody.innerHTML = '';
+  (d.recentTrades||[]).forEach((t,i)=>{
+    const tr = document.createElement('tr');
+    const cls = t.type.includes('TP')?'tp':t.type.includes('SL')?'sl':'dca';
+    tr.innerHTML = `
+      <td style="color:var(--dim)">${i+1}</td>
+      <td class="${cls}">${t.type}</td>
+      <td style="color:var(--a);font-family:'Share Tech Mono',monospace;">${t.price}</td>
+      <td style="color:${t.pnl>=0?'var(--g)':'var(--r)'};">${t.pnl!==0?(t.pnl>=0?'+':'')+t.pnl.toFixed(4):'—'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('resultPanel').style.display='block';
+  document.getElementById('tradePanel').style.display='block';
+}
+
+function renderCompare(){
+  const tbody = document.getElementById('cmpBody');
+  tbody.innerHTML='';
+  const entries = Object.entries(cmpResults);
+  if(!entries.length) return;
+
+  const bestPnl = Math.max(...entries.map(([,d])=>d.totalPnlPct));
+  entries.forEach(([strat,d])=>{
+    const tr = document.createElement('tr');
+    const isBest = d.totalPnlPct===bestPnl;
+    tr.innerHTML=`
+      <td style="color:var(--a);font-weight:${isBest?'bold':'normal'}">${d.strategy||strat}${isBest?' ★':''}</td>
+      <td class="${isBest?'best':''}" style="color:${d.totalPnlPct>=0?'var(--g)':'var(--r)'};">${d.totalPnlPct>=0?'+':''}${d.totalPnlPct.toFixed(2)}%</td>
+      <td style="color:${d.winRate>=50?'var(--g)':'var(--y)'};">${d.winRate.toFixed(1)}%</td>
+      <td style="color:${d.maxDrawdown<10?'var(--g)':'var(--r)'};">${d.maxDrawdown.toFixed(2)}%</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Equity Chart ──
+function drawEquityChart(curve, capital){
+  const canvas = document.getElementById('equityCanvas');
+  canvas.width  = canvas.offsetWidth||900;
+  const W=canvas.width, H=200, ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  if(!curve||curve.length<2) return;
+
+  const minV = Math.min(...curve)*0.998;
+  const maxV = Math.max(...curve)*1.002;
+  const range= maxV-minV||1;
+  const toX  = i=>(i/(curve.length-1))*W;
+  const toY  = v=>H-((v-minV)/range)*(H-20)-10;
+  const last = curve[curve.length-1];
+  const lineC= last>=capital?'#00ff9d':'#ff3355';
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1; ctx.setLineDash([4,8]);
+  for(let i=0;i<4;i++){const y=H/4*i+10; ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.setLineDash([]);
+
+  // Capital baseline
+  const capY = toY(capital);
+  ctx.strokeStyle='rgba(255,255,255,0.12)'; ctx.lineWidth=1; ctx.setLineDash([6,6]);
+  ctx.beginPath(); ctx.moveTo(0,capY); ctx.lineTo(W,capY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Fill
+  const grad=ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,last>=capital?'rgba(0,255,157,0.18)':'rgba(255,51,85,0.15)');
+  grad.addColorStop(1,'transparent');
+  ctx.beginPath(); ctx.moveTo(toX(0),toY(curve[0]));
+  for(let i=1;i<curve.length;i++) ctx.lineTo(toX(i),toY(curve[i]));
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+
+  // Line
+  ctx.strokeStyle=lineC; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(toX(0),toY(curve[0]));
+  for(let i=1;i<curve.length;i++) ctx.lineTo(toX(i),toY(curve[i]));
+  ctx.stroke();
+
+  // Current value label
+  ctx.fillStyle=lineC; ctx.font='bold 11px Share Tech Mono,monospace';
+  ctx.textAlign='right';
+  ctx.fillText(last.toFixed(2)+' USDT', W-6, toY(last)-5);
+
+  document.getElementById('chartDot').className='pd g';
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+window.addEventListener('resize',()=>{
+  if(document.getElementById('resultPanel').style.display!=='none'){
+    // redraw if results exist
+  }
+});
+</script>
+</body>
+</html>
