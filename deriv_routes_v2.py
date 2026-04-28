@@ -41,7 +41,7 @@ def _auth(request: Request):
 async def deriv_connect(req: DerivConnectReq, request: Request):
     _auth(request)
     try:
-        import deriv_bot_v2 as db
+        import deriv_bot as db
         from deriv_ws import DerivWS
         app_id = req.app_id or DERIV_APP_ID
         if db._ws_instance is None or not db._ws_instance.running:
@@ -64,7 +64,7 @@ async def deriv_connect(req: DerivConnectReq, request: Request):
 async def deriv_start(req: DerivStartReq, request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import start_deriv_bot
+        from deriv_bot import start_deriv_bot
         token = req.token or DERIV_TOKEN
         if not token:
             return JSONResponse({"error":"token required"},status_code=400)
@@ -84,7 +84,7 @@ async def deriv_start(req: DerivStartReq, request: Request):
 async def deriv_stop(req: DerivStopReq, request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import stop_deriv_bot
+        from deriv_bot import stop_deriv_bot
         return JSONResponse(await stop_deriv_bot(req.symbol))
     except Exception as e:
         return JSONResponse({"error":str(e)},status_code=500)
@@ -93,7 +93,7 @@ async def deriv_stop(req: DerivStopReq, request: Request):
 async def deriv_stop_all(request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import stop_all_deriv
+        from deriv_bot import stop_all_deriv
         return JSONResponse(await stop_all_deriv())
     except Exception as e:
         return JSONResponse({"error":str(e)},status_code=500)
@@ -103,7 +103,7 @@ async def deriv_stop_all(request: Request):
 async def deriv_status(request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import get_deriv_status
+        from deriv_bot import get_deriv_status
         return JSONResponse(get_deriv_status())
     except Exception as e:
         return JSONResponse({"error":str(e),"balance":0,"bots":[],"risk":{},"last_signals":{},"execution":{}})
@@ -113,7 +113,7 @@ async def deriv_status(request: Request):
 async def deriv_trades(request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import get_deriv_trades
+        from deriv_bot import get_deriv_trades
         return JSONResponse(get_deriv_trades())
     except Exception as e:
         return JSONResponse({"error":str(e),"trades":[],"total":0,"wins":0,"win_rate":0,"daily_pnl":0})
@@ -160,7 +160,7 @@ async def deriv_debug(req: DebugModeReq, request: Request):
 async def deriv_risk_reset(request: Request):
     _auth(request)
     try:
-        from deriv_bot_v2 import deriv_risk
+        from deriv_bot import deriv_risk
         from deriv_execution import exec_state
         if deriv_risk: deriv_risk.reset_stop()
         exec_state.stopped_today = False
