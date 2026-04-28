@@ -15,6 +15,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="SocialGuard PRO")
+
+try:
+    from deriv_routes_v2 import deriv_router
+    app.include_router(deriv_router)
+    print("[Startup] Deriv module v2 loaded ✅")
+except ImportError as e:
+    print(f"[Startup] Deriv module not found: {e}")
+
 app.add_middleware(CORSMiddleware,
     allow_origins=["https://tradego.sbs","https://www.tradego.sbs","http://localhost:8000"],
     allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
