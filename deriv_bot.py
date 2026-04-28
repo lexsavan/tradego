@@ -15,46 +15,35 @@ SYMBOLS = {
     "V50":  "R_50",
 }
 
-# ── Shared Deriv state (isolated from crypto bots) ───────────────────────────
-deriv_bots: dict     = {}      # symbol_key → bot state
-deriv_sessions: dict = {}      # session_id → DerivWS instance
+# ── Isolated Deriv state ─────────────────────────────────────────────────────
+deriv_bots: dict     = {}
+deriv_sessions: dict = {}
 deriv_risk: Optional[DerivRiskManager] = None
 _last_signal: dict   = {}
 _ws_instance: Optional[DerivWS] = None
 _bot_task: Optional[asyncio.Task] = None
 
-class DerivBot:
-    def __init__(self, symbol_key: str, amount_pct: float = 2.0,
-                 duration: int = 1, risk_level: str = "low"):
-        self.symbol_key   = symbol_key
-        self.symbol       = SYMBOLS.get(symbol_key, "R_75")
-        self.amount_pct   = amount_pct    # % of balance per trade
-        self.duration     = duration      # minutes
-        self.risk_level   = risk_level
-        self.status       = "idle"
-        self.started      = datetime.now().isoformat()
-        self.last_signal  = {}
-        self.active_trade : Optional[dict] = None
-
 async def start_deriv_bot(symbol_key: str, app_id: str, token: str,
                           amount_pct: float = 2.0, duration: int = 1,
-                          risk_level: str = "low") -> dict:
+                          risk_level: str = "low",
+                          account_type: str = "demo") -> dict:
     global _ws_instance, deriv_risk, _bot_task
 
-    if symbol_key in deriv_bots and deriv_bots[symbol_key]["status"] == "running":
+    if symbol_key in deriv_bots and deriv_bots[symbol_key].get("status") == "running":
         return {"error": f"Bot {symbol_key} already running"}
 
     sym = SYMBOLS.get(symbol_key)
     if not sym:
         return {"error": f"Unknown symbol {symbol_key}. Use: {list(SYMBOLS.keys())}"}
 
-    # Risk manager (shared across all Deriv bots)
+    # Risk manager
     if deriv_risk is None:
         cfg = {
             "low":    {"daily_loss_limit_pct": 5,  "max_trades_per_hour": 6,  "drawdown_stop_pct": 10, "min_confidence": 82},
             "medium": {"daily_loss_limit_pct": 10, "max_trades_per_hour": 8,  "drawdown_stop_pct": 15, "min_confidence": 80},
             "high":   {"daily_loss_limit_pct": 15, "max_trades_per_hour": 10, "drawdown_stop_pct": 20, "min_confidence": 78},
-        }.get(risk_level, {})
+        }.get(risk_level, {"daily_loss_limit_pct": 10, "max_trades_per_hour": 8,
+                           "drawdown_stop_pct": 15, "min_confidence": 80})
         deriv_risk = DerivRiskManager(**cfg)
 
     # WebSocket
@@ -77,6 +66,7 @@ async def start_deriv_bot(symbol_key: str, app_id: str, token: str,
         "amount_pct":    amount_pct,
         "duration":      duration,
         "risk_level":    risk_level,
+        "account_type":  account_type,
         "started":       datetime.now().isoformat(),
         "last_signal":   {},
         "active_trade":  None,
@@ -84,9 +74,9 @@ async def start_deriv_bot(symbol_key: str, app_id: str, token: str,
     }
     deriv_bots[symbol_key] = bot_state
 
-    # Start trading loop
     _bot_task = asyncio.create_task(_trading_loop(symbol_key, sym, amount_pct, duration))
-    return {"status": "started", "symbol": sym, "symbol_key": symbol_key}
+    return {"status": "started", "symbol": sym, "symbol_key": symbol_key,
+            "account_type": account_type}
 
 async def stop_deriv_bot(symbol_key: str) -> dict:
     global _bot_task
@@ -108,12 +98,10 @@ async def stop_all_deriv() -> dict:
         _ws_instance = None
     return {"status": "all stopped"}
 
-# ── Trading loop ─────────────────────────────────────────────────────────────
-
 async def _trading_loop(symbol_key: str, symbol: str, amount_pct: float, duration: int):
     global _last_signal
     print(f"[DerivBot] Loop started — {symbol_key} ({symbol})")
-    SCAN_INTERVAL = 15   # seconds between AI checks
+    SCAN_INTERVAL = 15
 
     try:
         while deriv_bots.get(symbol_key, {}).get("status") == "running":
@@ -133,28 +121,26 @@ async def _trading_loop(symbol_key: str, symbol: str, amount_pct: float, duratio
             if deriv_risk:
                 deriv_risk.set_balance(balance)
 
-            # AI signal
             signal_data = await get_signal(symbol, prices, balance, use_consensus=True)
-            _last_signal[symbol_key]                   = signal_data
-            deriv_bots[symbol_key]["last_signal"]      = signal_data
+            _last_signal[symbol_key]              = signal_data
+            deriv_bots[symbol_key]["last_signal"] = signal_data
 
             sig  = signal_data.get("signal", "WAIT")
             conf = signal_data.get("confidence", 0)
-            print(f"[DerivBot] {symbol_key} Signal={sig} Confidence={conf}% — {signal_data.get('reason','')}")
+            print(f"[DerivBot] {symbol_key} Signal={sig} Conf={conf}% — {signal_data.get('reason','')}")
 
-            # Risk gate
             if deriv_risk:
                 ok, reason = deriv_risk.can_trade(conf, sig)
                 if not ok:
                     print(f"[DerivBot] Risk block: {reason}")
                     continue
 
-            # Place trade
             stake = deriv_risk.stake_amount(amount_pct) if deriv_risk else round(balance * amount_pct / 100, 2)
             contract_type = "CALL" if sig == "BUY" else "PUT"
 
             deriv_bots[symbol_key]["active_trade"] = {
-                "signal": sig, "stake": stake, "time": datetime.now().strftime("%H:%M:%S"),
+                "signal": sig, "stake": stake,
+                "time": datetime.now().strftime("%H:%M:%S"),
                 "duration": duration, "contract_type": contract_type
             }
 
@@ -165,9 +151,7 @@ async def _trading_loop(symbol_key: str, symbol: str, amount_pct: float, duratio
                 deriv_bots[symbol_key]["active_trade"] = None
                 continue
 
-            # Record pending trade
             deriv_bots[symbol_key]["trades_count"] = deriv_bots[symbol_key].get("trades_count", 0) + 1
-            # Wait for settlement (duration + buffer)
             await asyncio.sleep(duration * 60 + 10)
             deriv_bots[symbol_key]["active_trade"] = None
 
@@ -179,8 +163,6 @@ async def _trading_loop(symbol_key: str, symbol: str, amount_pct: float, duratio
             deriv_bots[symbol_key]["status"] = "error"
             deriv_bots[symbol_key]["error"]  = str(e)
 
-# ── Callbacks ────────────────────────────────────────────────────────────────
-
 async def _on_balance(data: dict):
     if deriv_risk:
         deriv_risk.set_balance(data["balance"])
@@ -189,33 +171,30 @@ async def _on_trade_result(data: dict):
     if data.get("type") != "settled":
         return
     poc   = data["data"]
-    won   = poc.get("profit", 0) > 0
+    won   = float(poc.get("profit", 0)) > 0
     pnl   = float(poc.get("profit", 0))
     stake = float(poc.get("buy_price", 0))
     sym   = poc.get("underlying", "")
     sig   = "BUY" if poc.get("contract_type", "").startswith("CALL") else "SELL"
     if deriv_risk:
         deriv_risk.record_trade(won, pnl, stake, sym, sig)
-    status_str = "✅ WIN" if won else "❌ LOSS"
-    print(f"[DerivBot] Trade settled: {status_str} | PnL={pnl:.2f} | {sym}")
-
-# ── Status ───────────────────────────────────────────────────────────────────
+    print(f"[DerivBot] {'✅ WIN' if won else '❌ LOSS'} | PnL={pnl:.2f} | {sym}")
 
 def get_deriv_status() -> dict:
-    risk_status = deriv_risk.status() if deriv_risk else {}
+    risk_status  = deriv_risk.status() if deriv_risk else {}
     ws_connected = _ws_instance is not None and _ws_instance.running
-    bots_list = []
+    bots_list    = []
     for k, b in deriv_bots.items():
         ticks_count = len(_ws_instance.ticks.get(b["symbol"], [])) if _ws_instance else 0
         bots_list.append({**b, "ticks_collected": ticks_count})
     return {
-        "ws_connected":  ws_connected,
-        "balance":       _ws_instance.balance if _ws_instance else 0,
-        "currency":      _ws_instance.currency if _ws_instance else "USD",
-        "bots":          bots_list,
-        "last_signals":  _last_signal,
-        "risk":          risk_status,
-        "timestamp":     datetime.now().isoformat(),
+        "ws_connected": ws_connected,
+        "balance":      _ws_instance.balance if _ws_instance else 0,
+        "currency":     _ws_instance.currency if _ws_instance else "USD",
+        "bots":         bots_list,
+        "last_signals": _last_signal,
+        "risk":         risk_status,
+        "timestamp":    datetime.now().isoformat(),
     }
 
 def get_deriv_trades() -> dict:
