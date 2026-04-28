@@ -7,7 +7,7 @@ from typing import Optional
 from deriv_ws       import DerivWS
 from deriv_ai       import get_signal, compute_indicators
 from deriv_risk     import DerivRiskManager
-from deriv_execution import exec_state
+from deriv_execution import exec_state, ExecutionState
 
 SYMBOLS = {"V75":"R_75","V100":"R_100","V25":"R_25","V50":"R_50"}
 
