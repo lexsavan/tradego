@@ -15,18 +15,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="SocialGuard PRO")
-from deriv_routes import deriv_router
-app.include_router(deriv_router)
-
-# ── Deriv Module ──────────────────────────────────────────────────────────────
-try:
-    from deriv_routes import deriv_router
-    app.include_router(deriv_router)
-    print("[Startup] Deriv module loaded ✅")
-except ImportError as _e:
-    print(f"[Startup] Deriv module not found — skipping ({_e})")
-# ─────────────────────────────────────────────────────────────────────────────
-
 app.add_middleware(CORSMiddleware,
     allow_origins=["https://tradego.sbs","https://www.tradego.sbs","http://localhost:8000"],
     allow_methods=["*"], allow_headers=["*"], allow_credentials=True)
@@ -83,101 +71,6 @@ def load_data():
         print(f"[Load] {e}"); bots={}; rebalance_log=[]
 
 load_data()
-
-# ══════════════════════════════════════════════
-#  P/L TRACKER — Background job every 5 min
-# ══════════════════════════════════════════════
-async def update_pnl():
-    """Update P/L for all running bots every 5 minutes"""
-    while True:
-        try:
-            await asyncio.sleep(300)  # 5 minutes
-            for sym, bot in list(bots.items()):
-                if not isinstance(bot, dict): continue
-                if bot.get("status") != "running": continue
-
-                # Get current price
-                binance_sym = sym.replace("/", "")
-                try:
-                    async with httpx.AsyncClient(timeout=5) as h:
-                        r = await h.get("https://api.binance.com/api/v3/ticker/price",
-                                        params={"symbol": binance_sym})
-                        current_price = float(r.json()["price"])
-                except:
-                    continue
-
-                capital = bot.get("capital", 50)
-                entry   = bot.get("entry_price", 0)
-                mode    = bot.get("mode", "sim")
-
-                if mode == "live":
-                    # Live: check actual Binance balance
-                    try:
-                        bal = await get_balance()
-                        asset = binance_sym.replace("USDT", "")
-                        asset_qty = bal.get("balances", {}).get(asset, 0)
-                        usdt_bal  = bal.get("usdt", 0)
-                        if entry > 0 and asset_qty > 0:
-                            current_value = asset_qty * current_price + usdt_bal
-                            bot["pnl"] = round(current_value - capital, 4)
-                        bot["currentPrice"] = current_price
-                        bot["lastUpdate"]   = datetime.now().isoformat()
-                    except Exception as e:
-                        print(f"[PnL Live] {sym}: {e}")
-
-                else:
-                    # Simulation: estimate P/L based on price movement
-                    if entry <= 0:
-                        bot["entry_price"] = current_price
-                        entry = current_price
-
-                    price_change_pct = (current_price - entry) / entry * 100
-                    grid_cfg = bot.get("grid", {})
-                    grid_n   = grid_cfg.get("lines", 12)
-                    tp_pct   = grid_cfg.get("tp", 0.6)
-                    range_d  = grid_cfg.get("rangeDown", 6)
-                    range_u  = grid_cfg.get("rangeUp", 6)
-
-                    # Estimate: grid captures ~0.4-0.8% per completed cycle
-                    # Time-based estimate: trades_per_day * tp_pct * capital
-                    started = bot.get("started", datetime.now().isoformat())
-                    try:
-                        start_dt   = datetime.fromisoformat(started)
-                        hours_run  = (datetime.now() - start_dt).total_seconds() / 3600
-                        days_run   = hours_run / 24
-
-                        # Estimate grid performance
-                        volatility = abs(price_change_pct)
-                        if volatility > 0 and range_d > 0:
-                            # How many grid levels hit
-                            levels_hit = min(grid_n, int(volatility / (range_d / grid_n)))
-                            # Each level earns tp_pct of capital/grid_n
-                            estimated_pnl = levels_hit * (capital / grid_n) * (tp_pct / 100)
-                            # Factor in if price went down (DCA kicks in)
-                            if price_change_pct < -2:
-                                estimated_pnl *= 0.7  # DCA offsetting loss
-                        else:
-                            estimated_pnl = days_run * capital * 0.004  # ~0.4%/day estimate
-
-                        bot["pnl"]          = round(estimated_pnl, 4)
-                        bot["currentPrice"] = current_price
-                        bot["priceChange"]  = round(price_change_pct, 2)
-                        bot["hoursRun"]     = round(hours_run, 1)
-                        bot["lastUpdate"]   = datetime.now().isoformat()
-                    except Exception as e:
-                        print(f"[PnL Sim] {sym}: {e}")
-
-            save_data()
-            print(f"[PnL] Updated {len([b for b in bots.values() if isinstance(b,dict) and b.get('status')=='running'])} bots")
-
-        except Exception as e:
-            print(f"[PnL Tracker] Error: {e}")
-            await asyncio.sleep(60)
-
-@app.on_event("startup")
-async def startup():
-    asyncio.create_task(update_pnl())
-    print("[Startup] P/L Tracker started")
 
 SYMBOLS=["DGBUSDT","BTCUSDT","ETHUSDT","BNBUSDT","XRPUSDT","SOLUSDT","ADAUSDT",
          "DOGEUSDT","LTCUSDT","TRXUSDT","AVAXUSDT","LINKUSDT","DOTUSDT","MATICUSDT",
@@ -635,16 +528,12 @@ async def logout(request: Request, response: Response):
 
 @app.get("/api/health")
 async def health():
-    from fastapi.responses import JSONResponse
     hc=bool(ANTHROPIC_KEY); hg=bool(OPENAI_KEY); hm=bool(GEMINI_KEY)
     cnt=sum([hc,hg,hm]); con=cnt>=2
     active=len([1 for b in bots.values() if isinstance(b,dict) and b.get("status")=="running"])
-    return JSONResponse(
-        content={"status":"running","domain":"tradego.sbs",
-                 "ai_mode":"consensus-3ai" if con else "claude-only",
-                 "ai_count":f"{cnt}/3 AIs active","claude_ok":hc,"openai_ok":hg,"gemini_ok":hm,
-                 "consensus":con,"activeBots":active,"timestamp":datetime.now().isoformat()},
-        headers={"Content-Type":"application/json"})
+    return {"status":"✅ running","domain":"tradego.sbs","ai_mode":"consensus-3ai" if con else "claude-only",
+            "ai_count":f"{cnt}/3 AIs active","claude_ok":hc,"openai_ok":hg,"gemini_ok":hm,
+            "consensus":con,"activeBots":active,"timestamp":datetime.now().isoformat()}
 
 @app.get("/api/market")
 async def market(request: Request):

@@ -448,15 +448,18 @@ body::before{content:'';position:fixed;inset:0;
 
 <!-- ═══ PAGE: Deriv Bot ═══ -->
 <div class="page" id="page-deriv">
-  <div class="sbar" style="grid-template-columns:repeat(5,1fr);">
+  <div class="sbar" style="grid-template-columns:repeat(6,1fr);">
     <div class="sc"><div class="sc-l">Deriv Balance</div><div class="sc-v y" id="dBalance">0.00</div><div class="sc-s" id="dCurrency">USD</div></div>
-    <div class="sc"><div class="sc-l">Win Rate</div><div class="sc-v g" id="dWinRate">0%</div><div class="sc-s" id="dTotalTrades">0 trades</div></div>
+    <div class="sc"><div class="sc-l">Bot Status</div><div class="sc-v p" id="dBotStatus">WAITING</div><div class="sc-s" id="dLastTradeTime">—</div></div>
+    <div class="sc"><div class="sc-l">Win Rate (10)</div><div class="sc-v g" id="dWinRate10">0%</div><div class="sc-s" id="dTotalTrades">0 trades</div></div>
     <div class="sc"><div class="sc-l">Daily P/L</div><div class="sc-v g" id="dDailyPnl">+0.00</div><div class="sc-s" id="dDailyPct">0%</div></div>
-    <div class="sc"><div class="sc-l">Drawdown</div><div class="sc-v r" id="dDrawdown">0%</div><div class="sc-s">from peak</div></div>
+    <div class="sc"><div class="sc-l">Streak</div><div class="sc-v" id="dStreak">—</div><div class="sc-s" id="dStreakLabel">—</div></div>
     <div class="sc"><div class="sc-l">AI Signal</div><div class="sc-v p" id="dSignal">WAIT</div><div class="sc-s" id="dConfidence">0%</div></div>
   </div>
+
   <div class="g2">
     <div>
+      <!-- Control -->
       <div class="pnl">
         <div class="ph"><div class="pd p"></div>DERIV BOT CONTROL</div>
         <div class="pb">
@@ -468,77 +471,114 @@ body::before{content:'';position:fixed;inset:0;
             <option value="V50">🟡 Volatility 50 Index</option>
           </select>
           <div class="r2" style="margin-top:4px;">
-            <div><span class="fl">Amount % of Balance</span><input class="fi" id="dAmtPct" type="number" value="2" min="0.5" max="5" step="0.5"></div>
-            <div><span class="fl">Duration (minutes)</span>
+            <div><span class="fl">Amount % Balance</span><input class="fi" id="dAmtPct" type="number" value="2" min="0.5" max="5" step="0.5"></div>
+            <div><span class="fl">Duration (min)</span>
               <select class="fi" id="dDur">
-                <option value="1">1 minute</option>
-                <option value="2">2 minutes</option>
-                <option value="3">3 minutes</option>
+                <option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option>
               </select>
             </div>
           </div>
           <span class="fl">Risk Level</span>
           <select class="fi" id="dRisk">
-            <option value="low">🛡 Low — Min confidence 82%, max 6/h</option>
-            <option value="medium" selected>⚖ Medium — Min confidence 80%, max 8/h</option>
-            <option value="high">🔥 High — Min confidence 78%, max 10/h</option>
+            <option value="low">🛡 Low (82% conf)</option>
+            <option value="medium" selected>⚖ Medium (80% conf)</option>
+            <option value="high">🔥 High (78% conf)</option>
           </select>
           <span class="fl">Deriv API Token</span>
-          <input class="fi" id="dToken" type="password" placeholder="Paste your Deriv API token here...">
+          <input class="fi" id="dToken" type="password" placeholder="Paste Deriv API token...">
           <span class="fl">Account Type</span>
           <select class="fi" id="dAccType">
-            <option value="demo">🧪 Demo Account (VRTC...)</option>
-            <option value="real">💰 Real Account (CR...)</option>
+            <option value="demo">🧪 Demo (VRTC...)</option>
+            <option value="real">💰 Real (CR...)</option>
           </select>
           <button class="btn inf full" style="margin-top:10px;" id="dConnectBtn" onclick="connectDerivOnly()">🔌 CONNECT & CHECK BALANCE</button>
           <div class="r2" style="margin-top:6px;">
             <button class="btn suc full" id="dStartBtn" onclick="startDerivBot()">▶ START BOT</button>
             <button class="btn dan full" id="dStopBtn" onclick="stopDerivBot()" disabled>⏹ STOP BOT</button>
           </div>
-          <button class="btn warn full" style="margin-top:6px;" onclick="resetDerivRisk()">🔄 Reset Risk Block</button>
-          <div class="note" style="margin-top:8px;">⚠ ບໍ່ trade ຖ້າ confidence &lt; 80% · Stop ຫຼັງ 3 ລ້ົມຕິດ · Cooldown 120s · Daily limit 10%</div>
+          <button class="btn warn full" style="margin-top:6px;" onclick="resetDerivRisk()">🔄 Reset Risk/Safety</button>
+          <!-- Debug mode -->
+          <div style="margin-top:8px;padding:8px;background:rgba(255,200,0,.05);border:1px solid rgba(255,200,0,.2);border-radius:4px;">
+            <div style="font-size:10px;color:var(--y);font-weight:500;margin-bottom:6px;">🐛 DEBUG MODE</div>
+            <div class="r2">
+              <button class="btn warn full" onclick="toggleDebug(true)">Enable (50% conf)</button>
+              <button class="btn inf full" onclick="toggleDebug(false)">Disable</button>
+            </div>
+            <div style="font-size:9px;color:var(--dim);margin-top:4px;" id="dDebugStatus">OFF — normal confidence threshold</div>
+          </div>
+          <div class="note" style="margin-top:8px;">⚠ Stop after 3 losses · Cooldown 120s · Daily limit 10% · No martingale</div>
         </div>
       </div>
-      <div class="pnl" id="dActiveTradePnl" style="display:none;">
-        <div class="ph"><div class="pd g" style="animation:bl .5s infinite;"></div>ACTIVE TRADE</div>
-        <div class="pb" id="dActiveTrade" style="font-family:'Share Tech Mono',monospace;font-size:12px;"></div>
-      </div>
+
+      <!-- Open Positions -->
       <div class="pnl">
-        <div class="ph"><div class="pd r"></div>RISK STATUS</div>
+        <div class="ph"><div class="pd g" id="dPosDot"></div>OPEN POSITIONS
+          <span style="margin-left:auto;font-size:9px;color:var(--dim);" id="dPosCount">0 open</span>
+        </div>
+        <div style="padding:8px;" id="dOpenPositions">
+          <div style="color:var(--dim);text-align:center;padding:12px;font-size:11px;">ບໍ່ມີ position ເປີດຢູ່</div>
+        </div>
+      </div>
+
+      <!-- Risk Status -->
+      <div class="pnl">
+        <div class="ph"><div class="pd r"></div>SAFETY STATUS</div>
         <div class="pb">
           <div class="cfg">
             <div class="cfg-r"><span class="cfg-k">Status:</span><span class="cfg-v g" id="dRiskOk">ACTIVE</span></div>
-            <div class="cfg-r"><span class="cfg-k">Consecutive losses:</span><span class="cfg-v" id="dConsecLoss">0</span></div>
-            <div class="cfg-r"><span class="cfg-k">Cooldown remaining:</span><span class="cfg-v" id="dCooldown">0s</span></div>
-            <div class="cfg-r"><span class="cfg-k">Trades this hour:</span><span class="cfg-v" id="dTradesHour">0</span></div>
+            <div class="cfg-r"><span class="cfg-k">Loss streak:</span><span class="cfg-v" id="dConsecLoss">0</span></div>
+            <div class="cfg-r"><span class="cfg-k">Win streak:</span><span class="cfg-v g" id="dWinStreak">0</span></div>
+            <div class="cfg-r"><span class="cfg-k">Cooldown:</span><span class="cfg-v" id="dCooldown">0s</span></div>
+            <div class="cfg-r"><span class="cfg-k">Trades today:</span><span class="cfg-v" id="dTradesHour">0</span></div>
             <div class="cfg-r"><span class="cfg-k">Stop reason:</span><span class="cfg-v r" id="dStopReason">—</span></div>
           </div>
         </div>
       </div>
     </div>
+
     <div>
+      <!-- AI Signal -->
       <div class="pnl">
         <div class="ph"><div class="pd p" id="dAiDot"></div>AI CONSENSUS SIGNAL</div>
         <div class="pb" id="dSignalPanel">
           <div style="text-align:center;padding:30px;color:var(--dim);">
             <div style="font-size:40px;">🤖</div>
             <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--pu);margin:8px 0;letter-spacing:2px;">WAITING FOR DATA</div>
-            <div style="font-size:11px;">Start bot → AI will scan every 15s</div>
+            <div style="font-size:11px;">Start bot → AI scans every 15s</div>
           </div>
         </div>
       </div>
+
+      <!-- Strategy Performance -->
       <div class="pnl">
-        <div class="ph"><div class="pd g"></div>LIVE TICKS<span style="margin-left:auto;font-size:9px;color:var(--dim);" id="dTickCount">0 ticks</span></div>
-        <div style="padding:8px 12px;">
-          <canvas id="dTickChart" width="400" height="60" style="width:100%;height:60px;display:block;"></canvas>
-          <div id="dTickFeed" style="display:flex;gap:3px;flex-wrap:wrap;margin-top:6px;max-height:36px;overflow:hidden;font-family:'Share Tech Mono',monospace;font-size:9px;"></div>
+        <div class="ph"><div class="pd a"></div>STRATEGY PERFORMANCE (AI LEARNING)</div>
+        <div class="pb" id="dStrategyPanel">
+          <div style="color:var(--dim);font-size:11px;text-align:center;padding:12px;">ລໍຖ້າ trades...</div>
         </div>
       </div>
+
+      <!-- Live Ticks -->
       <div class="pnl">
-        <div class="ph"><div class="pd"></div>TRADE HISTORY
-          <button class="btn inf" style="margin-left:auto;padding:3px 10px;font-size:9px;" onclick="loadDerivTrades()">↺ REFRESH</button>
+        <div class="ph"><div class="pd g"></div>LIVE TICKS + MOMENTUM
+          <span style="margin-left:auto;font-size:9px;color:var(--dim);" id="dTickCount">0 ticks</span>
         </div>
-        <div style="padding:8px;max-height:280px;overflow-y:auto;" id="dTradeHistory">
+        <div style="padding:8px 12px;">
+          <canvas id="dTickChart" width="400" height="55" style="width:100%;height:55px;display:block;"></canvas>
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--dim);margin-top:4px;">
+            <span>Momentum: <span id="dMomentum" style="color:var(--g);">—</span></span>
+            <span>Last: <span id="dLastPrice" style="color:var(--a);">—</span></span>
+          </div>
+          <div id="dTickFeed" style="display:flex;gap:2px;flex-wrap:wrap;margin-top:4px;max-height:28px;overflow:hidden;font-family:'Share Tech Mono',monospace;font-size:9px;"></div>
+        </div>
+      </div>
+
+      <!-- Trade Log -->
+      <div class="pnl">
+        <div class="ph"><div class="pd"></div>REAL TRADE LOG
+          <span style="margin-left:auto;font-size:9px;color:var(--g);" id="dWinRateBadge">—</span>
+          <button class="btn inf" style="margin-left:8px;padding:3px 10px;font-size:9px;" onclick="loadDerivTrades()">↺</button>
+        </div>
+        <div style="padding:8px;max-height:260px;overflow-y:auto;" id="dTradeHistory">
           <div style="color:var(--dim);text-align:center;padding:20px;font-size:11px;">ບໍ່ມີ trades ຍັງ</div>
         </div>
       </div>
@@ -578,10 +618,9 @@ async function checkHealth(){
     let d;
     if(ct.includes('application/json')){d=await r.json();}
     else{const t=await r.text();try{d=JSON.parse(t);}catch{document.getElementById('hdrStatus').textContent='CONNECTED ✅';loadStats();return;}}
-    const isConsensus=d.consensus||false;
     document.getElementById('hdrStatus').textContent='CONNECTED ✅';
     const badge=document.getElementById('aiBadgeTxt');
-    if(badge)badge.textContent=isConsensus?'3 AI Consensus':'Claude AI';
+    if(badge)badge.textContent=(d.consensus?'3 AI Consensus':'Claude AI');
     loadStats();
   }catch(e){
     document.getElementById('hdrStatus').textContent='OFFLINE — python server_pro.py';
@@ -1012,99 +1051,66 @@ setInterval(()=>{
 addLog('ai','🚀 SocialGuard PRO loaded — Better than 3Commas + Pionex');
 addLog('info','📡 Connecting to backend...');
 
-// ══════════════════════════════════════════
-//  DERIV BOT JS
-// ══════════════════════════════════════════
-let derivPolling = null;
-let derivBalanceTimer = null;
-let derivRunning = false;
+// ══════════════════════════════════════════════════════
+//  DERIV BOT v2 — Real Execution + Feedback Loop
+// ══════════════════════════════════════════════════════
+let derivPolling=null, derivBalanceTimer=null, derivRunning=false;
 
 async function connectDerivOnly(){
-  const token = document.getElementById('dToken').value.trim();
-  if(!token){addLog('err','❌ Deriv: ໃສ່ API Token ກ່ອນ');return;}
-  const btn = document.getElementById('dConnectBtn');
+  const token=document.getElementById('dToken').value.trim();
+  if(!token){addLog('err','❌ Deriv: ໃສ່ token ກ່ອນ');return;}
+  const btn=document.getElementById('dConnectBtn');
   btn.textContent='⏳ Connecting...'; btn.disabled=true;
   try{
-    const res = await fetch(API+'/api/deriv/connect',{
-      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-      body:JSON.stringify({token,account_type:document.getElementById('dAccType').value})
-    });
-    const ct = res.headers.get('content-type')||'';
-    if(!ct.includes('application/json')) throw new Error('Server error — check Railway logs');
-    const d = await res.json();
-    if(d.error) throw new Error(d.error);
-    addLog('ai','🔌 WS connected — waiting for balance...');
+    const res=await fetch(API+'/api/deriv/connect',{method:'POST',
+      headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({token,account_type:document.getElementById('dAccType').value})});
+    const d=await res.json();
+    if(d.error)throw new Error(d.error);
     btn.textContent='⏳ Loading balance...';
-    let bal=parseFloat(d.balance||0), cur=d.currency||'USD';
-    // Poll up to 15s if balance is 0
+    let bal=parseFloat(d.balance||0),cur=d.currency||'USD';
     for(let i=0;i<15&&bal<=0;i++){
       await new Promise(r=>setTimeout(r,1000));
       btn.textContent=`⏳ Waiting... (${i+1}s)`;
-      try{
-        const r2=await fetch(API+'/api/deriv/status',{credentials:'include'});
-        const s=await r2.json();
-        if(s.balance>0){bal=s.balance;cur=s.currency||'USD';break;}
-      }catch{}
+      try{const r2=await fetch(API+'/api/deriv/status',{credentials:'include'});
+        const s=await r2.json();if(s.balance>0){bal=s.balance;cur=s.currency||'USD';break;}}catch{}
     }
     document.getElementById('dBalance').textContent=parseFloat(bal).toFixed(2);
     document.getElementById('dCurrency').textContent=cur;
-    if(bal>0){
-      addLog('ok',`✅ Balance: ${bal} ${cur}`);
-      btn.textContent='✅ CONNECTED';
-    } else {
-      addLog('warn','⚠ Connected but balance=0 — ກວດ token ໃໝ່');
-      btn.textContent='⚠ CONNECTED (no balance)';
-      btn.disabled=false;
-    }
-    // Keep polling every 5s
+    if(bal>0){addLog('ok',`✅ Balance: ${bal} ${cur}`);btn.textContent='✅ CONNECTED';}
+    else{addLog('warn','⚠ Connected but balance=0 — ກວດ token');btn.textContent='⚠ NO BALANCE';btn.disabled=false;}
     if(derivBalanceTimer)clearInterval(derivBalanceTimer);
-    derivBalanceTimer=setInterval(async()=>{
-      try{
-        const r3=await fetch(API+'/api/deriv/status',{credentials:'include'});
-        const s3=await r3.json();
-        if(s3.balance>0){
-          document.getElementById('dBalance').textContent=parseFloat(s3.balance).toFixed(2);
-          document.getElementById('dCurrency').textContent=s3.currency||'USD';
-        }
-      }catch{}
-    },5000);
-  }catch(e){
-    addLog('err','❌ Deriv connect: '+e.message);
-    btn.textContent='🔌 CONNECT & CHECK BALANCE';
-    btn.disabled=false;
-  }
+    derivBalanceTimer=setInterval(()=>loadDerivStatus(),5000);
+  }catch(e){addLog('err','❌ '+e.message);btn.textContent='🔌 CONNECT & CHECK BALANCE';btn.disabled=false;}
 }
 
 async function startDerivBot(){
   const token=document.getElementById('dToken').value.trim();
-  if(!token){addLog('err','❌ Deriv: ໃສ່ API Token ກ່ອນ');return;}
+  if(!token){addLog('err','❌ ໃສ່ token ກ່ອນ');return;}
   try{
-    const res=await fetch(API+'/api/deriv/start',{
-      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
-      body:JSON.stringify({
-        symbol:document.getElementById('dSym').value,
+    const res=await fetch(API+'/api/deriv/start',{method:'POST',
+      headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({symbol:document.getElementById('dSym').value,
         amount_pct:+document.getElementById('dAmtPct').value||2,
         duration:+document.getElementById('dDur').value||1,
         risk_level:document.getElementById('dRisk').value,
-        token,account_type:document.getElementById('dAccType').value,
-      })
-    });
+        token,account_type:document.getElementById('dAccType').value})});
     const d=await res.json();
-    if(d.error){addLog('err','❌ Deriv: '+d.error);return;}
-    addLog('ok',`✅ Deriv bot started — ${d.symbol_key}`);
+    if(d.error){addLog('err','❌ '+d.error);return;}
+    addLog('ok',`✅ Bot started — ${d.symbol_key} (${d.account_type})`);
     derivRunning=true;
     document.getElementById('dStartBtn').disabled=true;
     document.getElementById('dStopBtn').disabled=false;
     startDerivPolling();
-  }catch(e){addLog('err','❌ Deriv start: '+e.message);}
+  }catch(e){addLog('err','❌ '+e.message);}
 }
 
 async function stopDerivBot(){
   try{
-    const sym=document.getElementById('dSym').value;
-    await fetch(API+'/api/deriv/stop',{method:'POST',headers:{'Content-Type':'application/json'},
-      credentials:'include',body:JSON.stringify({symbol:sym})});
-    addLog('warn','⏹ Deriv bot stopped');
+    await fetch(API+'/api/deriv/stop',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({symbol:document.getElementById('dSym').value})});
+    addLog('warn','⏹ Bot stopped');
     derivRunning=false;
     document.getElementById('dStartBtn').disabled=false;
     document.getElementById('dStopBtn').disabled=true;
@@ -1116,15 +1122,25 @@ async function resetDerivRisk(){
   try{
     const r=await fetch(API+'/api/deriv/risk/reset',{method:'POST',credentials:'include'});
     const d=await r.json();
-    addLog('warn','🔄 '+d.status);
-    loadDerivStatus();
+    addLog('warn','🔄 '+d.status);loadDerivStatus();
+  }catch(e){addLog('err','❌ '+e.message);}
+}
+
+async function toggleDebug(enabled){
+  try{
+    const r=await fetch(API+'/api/deriv/debug',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({enabled,confidence:enabled?50:80})});
+    const d=await r.json();
+    document.getElementById('dDebugStatus').textContent=d.message||'';
+    addLog(enabled?'warn':'ok', enabled?'🐛 Debug ON — confidence 50%':'✅ Debug OFF');
   }catch(e){addLog('err','❌ '+e.message);}
 }
 
 function startDerivPolling(){
   if(derivPolling)clearInterval(derivPolling);
   loadDerivStatus();loadDerivTrades();
-  derivPolling=setInterval(()=>{loadDerivStatus();loadDerivTrades();},8000);
+  derivPolling=setInterval(()=>{loadDerivStatus();loadDerivTrades();},5000);
 }
 function stopDerivPolling(){if(derivPolling){clearInterval(derivPolling);derivPolling=null;}}
 
@@ -1147,35 +1163,93 @@ async function loadDerivTrades(){
 }
 
 function renderDerivStatus(d){
-  const bal=d.balance||0,risk=d.risk||{};
+  const ex=d.execution||{}, risk=d.risk||{};
+  const bal=d.balance||0;
   document.getElementById('dBalance').textContent=parseFloat(bal).toFixed(2);
   document.getElementById('dCurrency').textContent=d.currency||'USD';
-  document.getElementById('dWinRate').textContent=(risk.win_rate||0)+'%';
-  document.getElementById('dTotalTrades').textContent=(risk.total_trades||0)+' trades';
-  const dp=risk.daily_pnl||0;
-  document.getElementById('dDailyPnl').textContent=(dp>=0?'+':'')+dp.toFixed(2);
-  document.getElementById('dDailyPnl').className='sc-v '+(dp>=0?'g':'r');
-  document.getElementById('dDailyPct').textContent=(risk.daily_pnl_pct||0)+'%';
-  document.getElementById('dDrawdown').textContent=(risk.drawdown_pct||0)+'%';
-  const stopped=risk.stopped||false;
+
+  // Bot status
+  const statusColor={'RUNNING':'var(--g)','TRADING':'var(--y)','WAITING':'var(--dim)'};
+  const statusEl=document.getElementById('dBotStatus');
+  statusEl.textContent=ex.bot_status||'WAITING';
+  statusEl.style.color=statusColor[ex.bot_status]||'var(--dim)';
+  document.getElementById('dLastTradeTime').textContent=ex.last_trade_time||'—';
+
+  // Winrate
+  document.getElementById('dWinRate10').textContent=(ex.winrate_10||0)+'%';
+  document.getElementById('dTotalTrades').textContent=(ex.daily_trades||0)+' today';
+
+  // Daily PnL
+  const dp=ex.daily_pnl||0;
+  const dpEl=document.getElementById('dDailyPnl');
+  dpEl.textContent=(dp>=0?'+':'')+dp.toFixed(2);
+  dpEl.className='sc-v '+(dp>=0?'g':'r');
+
+  // Streak
+  const ls=ex.loss_streak||0, ws=ex.win_streak||0;
+  const strEl=document.getElementById('dStreak');
+  if(ws>0){strEl.textContent='🔥 '+ws;strEl.style.color='var(--g)';document.getElementById('dStreakLabel').textContent='win streak';}
+  else if(ls>0){strEl.textContent='💔 '+ls;strEl.style.color='var(--r)';document.getElementById('dStreakLabel').textContent='loss streak';}
+  else{strEl.textContent='—';document.getElementById('dStreakLabel').textContent='—';}
+
+  // Signal
+  const sigs=d.last_signals||{},sig=Object.values(sigs)[0];
+  if(sig)renderDerivSignal(sig);
+
+  // Safety
+  const stopped=ex.stopped_today||false;
   document.getElementById('dRiskOk').textContent=stopped?'STOPPED':'ACTIVE';
   document.getElementById('dRiskOk').className='cfg-v '+(stopped?'r':'g');
-  document.getElementById('dConsecLoss').textContent=risk.consecutive_losses||0;
-  document.getElementById('dCooldown').textContent=(risk.cooldown_remaining||0)+'s';
-  document.getElementById('dTradesHour').textContent=risk.trades_this_hour||0;
-  document.getElementById('dStopReason').textContent=risk.stop_reason||'—';
-  const sigs=d.last_signals||{};
-  const sig=Object.values(sigs)[0];
-  if(sig)renderDerivSignal(sig);
-  const bots=d.bots||[];
-  const at=bots.find(b=>b.active_trade)?.active_trade;
-  const atp=document.getElementById('dActiveTradePnl');
-  if(at){
-    atp.style.display='block';
-    document.getElementById('dActiveTrade').innerHTML=
-      `<div style="color:var(--y);">${at.signal==='BUY'?'📈 RISE':'📉 FALL'} — ${at.symbol||''}</div>
-       <div style="font-size:9px;color:var(--dim);margin-top:4px;">Stake: ${at.stake} USD · ${at.duration}min · ${at.time}</div>`;
-  } else atp.style.display='none';
+  document.getElementById('dConsecLoss').textContent=ex.loss_streak||0;
+  document.getElementById('dWinStreak').textContent=ex.win_streak||0;
+  document.getElementById('dCooldown').textContent=(ex.cooldown_remaining||0)+'s';
+  document.getElementById('dTradesHour').textContent=ex.daily_trades||0;
+  document.getElementById('dStopReason').textContent=ex.stop_reason||'—';
+
+  // Open positions
+  renderOpenPositions(ex.open_positions||[]);
+
+  // Ticks
+  const ticks=ex.last_ticks||[];
+  if(ticks.length){
+    document.getElementById('dTickCount').textContent=ticks.length+' ticks';
+    document.getElementById('dMomentum').textContent=(ex.tick_momentum||0).toFixed(3);
+    const prices=ticks.map(t=>t.price);
+    document.getElementById('dLastPrice').textContent=prices[prices.length-1]?.toFixed(5)||'—';
+    drawTickChart(prices);
+    renderTickFeed(prices.slice(-15));
+  }
+
+  // Strategy
+  renderStrategy(ex);
+  
+  // Debug status
+  if(ex.debug_mode!==undefined){
+    document.getElementById('dDebugStatus').textContent=
+      ex.debug_mode?`ON — threshold ${ex.debug_confidence_threshold||50}%`:'OFF — normal threshold';
+  }
+}
+
+function renderOpenPositions(positions){
+  const el=document.getElementById('dOpenPositions');
+  const dot=document.getElementById('dPosDot');
+  document.getElementById('dPosCount').textContent=positions.length+' open';
+  if(!positions.length){
+    dot.className='pd g';
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:12px;font-size:11px;">ບໍ່ມີ position ເປີດຢູ່</div>';
+    return;
+  }
+  dot.className='pd g'; dot.style.animation='bl .5s infinite';
+  el.innerHTML=positions.map(p=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;margin-bottom:4px;
+      background:rgba(255,200,0,.08);border-left:3px solid var(--y);border-radius:2px;
+      font-family:'Share Tech Mono',monospace;font-size:10px;">
+      <span style="color:var(--y);font-size:11px;">${p.signal==='BUY'?'📈':'📉'} ${p.signal}</span>
+      <span style="color:var(--a);">${(p.symbol||'').replace('R_','V')}</span>
+      <span style="color:var(--dim);">$${p.stake}</span>
+      <span style="color:var(--dim);font-size:9px;">${p.strategy||''}</span>
+      <span style="margin-left:auto;color:var(--y);font-size:9px;">⏳ OPEN</span>
+    </div>`).join('');
 }
 
 function renderDerivSignal(sig){
@@ -1187,13 +1261,12 @@ function renderDerivSignal(sig){
   document.getElementById('dConfidence').textContent=conf+'%';
   document.getElementById('dAiDot').className='pd '+(signal==='BUY'?'g':signal==='SELL'?'r':'p');
   document.getElementById('dSignalPanel').innerHTML=`
-    <div style="text-align:center;padding:12px 0;">
-      <div style="font-family:'Orbitron',monospace;font-size:22px;color:${cm[signal]||'var(--y)'};letter-spacing:3px;">
+    <div style="text-align:center;padding:10px 0;">
+      <div style="font-family:'Orbitron',monospace;font-size:20px;color:${cm[signal]};letter-spacing:3px;">
         ${signal==='BUY'?'📈':signal==='SELL'?'📉':'⏸'} ${signal}
       </div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--a);margin:6px 0;">Confidence: ${conf}%</div>
-      <div style="font-size:10px;color:var(--tx);max-width:280px;margin:0 auto;line-height:1.7;">${sig.reason||''}</div>
-      <div style="font-size:8px;color:var(--dim);margin-top:6px;">${sig.source||''} ${sig.votes||''}</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--a);margin:4px 0;">Confidence: ${conf}% &nbsp;|&nbsp; ${sig.votes||''}</div>
+      <div style="font-size:10px;color:var(--tx);max-width:300px;margin:0 auto;">${sig.reason||''}</div>
     </div>
     <div class="cfg" style="margin-top:8px;">
       <div class="cfg-r"><span class="cfg-k">RSI(7):</span><span class="cfg-v ${(ind.rsi||50)<30?'g':(ind.rsi||50)>70?'r':''}">${ind.rsi||'—'}</span></div>
@@ -1201,30 +1274,62 @@ function renderDerivSignal(sig){
       <div class="cfg-r"><span class="cfg-k">Momentum:</span><span class="cfg-v">${ind.momentum||'—'}</span></div>
       <div class="cfg-r"><span class="cfg-k">Noise:</span><span class="cfg-v ${(ind.noise||0)>0.6?'r':'g'}">${ind.noise||'—'}</span></div>
       <div class="cfg-r"><span class="cfg-k">Trend:</span><span class="cfg-v">${ind.trend||'—'}</span></div>
-      <div class="cfg-r"><span class="cfg-k">Vol Spike:</span><span class="cfg-v ${ind.volatility_spike?'r':'g'}">${ind.volatility_spike?'YES ⚠':'NO ✅'}</span></div>
+      <div class="cfg-r"><span class="cfg-k">Vol Spike:</span><span class="cfg-v ${ind.volatility_spike?'r':'g'}">${ind.volatility_spike?'⚠ YES':'✅ NO'}</span></div>
     </div>`;
 }
 
+function renderStrategy(ex){
+  const el=document.getElementById('dStrategyPanel');
+  if(!ex.strategy_stats){return;}
+  const best=ex.best_strategy||'—';
+  const scores=ex.strategy_scores||{};
+  const stats=ex.strategy_stats||{};
+  const wr10=ex.winrate_10||0;
+  el.innerHTML=`
+    <div style="margin-bottom:8px;font-size:10px;">
+      <span style="color:var(--dim);">Best Strategy:</span>
+      <span style="color:var(--g);font-weight:500;margin-left:6px;">⭐ ${best}</span>
+      <span style="color:var(--dim);margin-left:8px;">WinRate(10): </span>
+      <span style="color:${wr10>=50?'var(--g)':'var(--r)'};">${wr10}%</span>
+    </div>
+    ${Object.entries(stats).map(([name,s])=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:10px;color:${name===best?'var(--g)':'var(--tx)'};min-width:90px;">${name==='best'?'⭐':''} ${name}</span>
+        <div style="flex:1;background:rgba(255,255,255,.05);height:4px;border-radius:2px;">
+          <div style="width:${s.total>0?Math.round(s.wins/s.total*100):0}%;height:4px;background:var(--g);border-radius:2px;"></div>
+        </div>
+        <span style="font-size:9px;color:var(--dim);">${s.wins}/${s.total} | PnL: ${(s.pnl||0).toFixed(2)}</span>
+        ${scores[name]!==undefined?`<span style="font-size:9px;color:var(--a);">score:${scores[name]}</span>`:''}
+      </div>`).join('')}`;
+}
+
 function renderDerivTrades(d){
-  const trades=d.trades||[],el=document.getElementById('dTradeHistory');
-  if(!trades.length){el.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;font-size:11px;">ບໍ່ມີ trades ຍັງ</div>';return;}
+  const trades=d.trades||[];
+  const el=document.getElementById('dTradeHistory');
+  const wr=d.win_rate_10||d.win_rate||0;
+  const badge=document.getElementById('dWinRateBadge');
+  if(badge)badge.textContent=`WR: ${wr}% | PnL: ${(d.daily_pnl||0)>=0?'+':''}${(d.daily_pnl||0).toFixed(2)}`;
+  if(!trades.length){
+    el.innerHTML='<div style="color:var(--dim);text-align:center;padding:20px;font-size:11px;">ບໍ່ມີ trades ຍັງ</div>';
+    return;
+  }
   el.innerHTML=trades.map(t=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;margin-bottom:4px;
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;margin-bottom:3px;
       background:rgba(0,0,0,.3);border-left:2px solid ${t.won?'var(--g)':'var(--r)'};border-radius:2px;
-      font-family:'Share Tech Mono',monospace;font-size:10px;">
-      <span style="color:var(--dim);font-size:9px;min-width:52px;">${t.time}</span>
-      <span style="color:var(--a);min-width:55px;">${(t.symbol||'').replace('R_','V')}</span>
-      <span style="color:${t.signal==='BUY'?'var(--g)':'var(--r)'};">${t.signal==='BUY'?'📈':'📉'} ${t.signal}</span>
-      <span style="color:var(--dim);">$${t.stake}</span>
-      <span style="margin-left:auto;color:${t.pnl>=0?'var(--g)':'var(--r)'};">${t.pnl>=0?'+':''}${(t.pnl||0).toFixed(2)}</span>
-      <span style="font-size:9px;">${t.won?'✅':'❌'}</span>
+      font-family:'Share Tech Mono',monospace;font-size:9px;">
+      <span style="color:var(--dim);min-width:48px;">${(t.closed_at||t.opened_at||'').slice(11,19)||t.time||'—'}</span>
+      <span style="color:${t.signal==='BUY'?'var(--g)':'var(--r)'};">${t.signal==='BUY'?'📈':'📉'} ${t.signal||'—'}</span>
+      <span style="color:var(--dim);">$${t.stake||0}</span>
+      <span style="font-size:8px;color:var(--dim);">${t.strategy||''}</span>
+      <span style="margin-left:auto;color:${(t.pnl||0)>=0?'var(--g)':'var(--r)'};">${(t.pnl||0)>=0?'+':''}${(t.pnl||0).toFixed(2)}</span>
+      <span>${t.won?'✅':'❌'}</span>
     </div>`).join('');
 }
 
 function drawTickChart(prices){
   const canvas=document.getElementById('dTickChart');
   if(!canvas||!prices.length)return;
-  const ctx=canvas.getContext('2d'),W=canvas.offsetWidth||400,H=60;
+  const ctx=canvas.getContext('2d'),W=canvas.offsetWidth||400,H=55;
   canvas.width=W;ctx.clearRect(0,0,W,H);
   const mn=Math.min(...prices),mx=Math.max(...prices),rng=mx-mn||1;
   const pts=prices.map((p,i)=>({x:(i/(prices.length-1))*W,y:H-((p-mn)/rng)*(H-6)-3}));
@@ -1232,9 +1337,19 @@ function drawTickChart(prices){
   pts.forEach((pt,i)=>i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y));
   ctx.stroke();
   ctx.lineTo(W,H);ctx.lineTo(0,H);
-  ctx.fillStyle='rgba(0,236,208,0.06)';ctx.fill();
+  ctx.fillStyle='rgba(0,236,208,0.05)';ctx.fill();
   const last=pts[pts.length-1];
   ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);ctx.fillStyle='#00ff9d';ctx.fill();
+}
+
+function renderTickFeed(prices){
+  const el=document.getElementById('dTickFeed');
+  if(!el)return;
+  el.innerHTML=prices.map((p,i)=>{
+    const prev=i>0?prices[i-1]:p;
+    const color=p>prev?'var(--g)':p<prev?'var(--r)':'var(--dim)';
+    return `<span style="color:${color};">${p}</span>`;
+  }).join(' ');
 }
 
 </script>
