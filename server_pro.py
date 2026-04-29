@@ -17,9 +17,9 @@ load_dotenv()
 app = FastAPI(title="SocialGuard PRO")
 
 try:
-    from deriv_routes_v2 import deriv_router
+    from deriv_routes_v3 import deriv_router
     app.include_router(deriv_router)
-    print("[Startup] Deriv module v2 loaded ✅")
+    print("[Startup] Deriv module v3 (multi-symbol) loaded ✅")
 except ImportError as e:
     print(f"[Startup] Deriv module not found: {e}")
 
